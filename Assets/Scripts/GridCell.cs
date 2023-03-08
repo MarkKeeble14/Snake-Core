@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -75,5 +76,25 @@ public class GridCell : MonoBehaviour
         occupants.Add(occupant);
         occupant.SetToCell(this);
         return occupant;
+    }
+
+    public GridCell GetUnobstructedNeighbour()
+    {
+        List<Vector2Int> neighbouringDirections = new List<Vector2Int> { Vector2Int.up, Vector2Int.left, Vector2Int.down, Vector2Int.right };
+        return GetUnobstructedNeighbour(neighbouringDirections);
+    }
+
+    private GridCell GetUnobstructedNeighbour(List<Vector2Int> options)
+    {
+        Vector2Int direction = options[UnityEngine.Random.Range(0, options.Count)];
+        GridCell neighbour = GetNeighbour(direction);
+        if (neighbour.IsOccupiedByObstruction())
+        {
+            options.Remove(direction);
+            neighbour = GetUnobstructedNeighbour(options);
+        }
+        if (neighbour.IsOccupiedByObstruction())
+            return null;
+        return neighbour;
     }
 }

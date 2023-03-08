@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class SnakeBehaviour : GridCellOccupant
 {
     public static SnakeBehaviour _Instance { get; private set; }
@@ -13,7 +14,7 @@ public class SnakeBehaviour : GridCellOccupant
 
     [SerializeField] private Vector2Int direction = Vector2Int.right;
     private Vector2Int lastDirectionMoved;
-    [SerializeField] private float timeBetweenTicks = .25f;
+    [SerializeField] private float timeBetweenMoves = .25f;
 
     private LinkedList<GridCellOccupant> snakeSegments = new LinkedList<GridCellOccupant>();
     [SerializeField] private GridCellOccupant snakeTailPrefab;
@@ -22,20 +23,27 @@ public class SnakeBehaviour : GridCellOccupant
     [SerializeField] private IntStore allowedCollisions;
 
     [SerializeField] private float spawnDelay = 1f;
-    [SerializeField] private float teleportDelay = 1f;
+
+    private bool snakeEnabled;
+    private bool moving;
+    private float moveTimer;
 
     private bool teleportFlag;
 
     private void Start()
     {
-        // Reset value
+        // Set forward vector
+        transform.forward = new Vector3(direction.x, 0, direction.y);
+
+        // Reset values
         segmentsCounter.Reset();
         allowedCollisions.Reset();
+        moveTimer = timeBetweenMoves;
 
         // Add head to linked list
         snakeSegments.AddFirst(this);
 
-        StartCoroutine(Movement(true));
+        StartCoroutine(Movement());
     }
 
     public override void ChangeCell(GridCell nextCell)
@@ -53,30 +61,112 @@ public class SnakeBehaviour : GridCellOccupant
         }
     }
 
-    private IEnumerator Movement(bool useDelay)
+    private IEnumerator Movement()
     {
-        if (useDelay)
-            yield return new WaitForSeconds(spawnDelay);
+        yield return new WaitForSeconds(spawnDelay);
 
+        snakeEnabled = true;
+    }
+
+    // Update is called once per frame
+    protected new void Update()
+    {
+        base.Update();
+
+        // Update forward
+        transform.forward = new Vector3(direction.x, 0, direction.y);
+
+        if (moveTimer > 0)
+        {
+            moveTimer -= Time.deltaTime;
+            moving = false;
+        }
+        else
+        {
+            moving = true;
+            moveTimer = timeBetweenMoves;
+        }
+
+        if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            if (lastDirectionMoved != Vector2Int.down)
+            {
+                direction = Vector2Int.up;
+                if (snakeEnabled && lastDirectionMoved != direction)
+                {
+                    moving = true;
+                    moveTimer = timeBetweenMoves;
+                }
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            if (lastDirectionMoved != Vector2Int.right)
+            {
+                direction = Vector2Int.left;
+                if (snakeEnabled && lastDirectionMoved != direction)
+                {
+                    moving = true;
+                    moveTimer = timeBetweenMoves;
+                }
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            if (lastDirectionMoved != Vector2Int.up)
+            {
+                direction = Vector2Int.down;
+                if (snakeEnabled && lastDirectionMoved != direction)
+                {
+                    moving = true;
+                    moveTimer = timeBetweenMoves;
+                }
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            if (lastDirectionMoved != Vector2Int.left)
+            {
+                direction = Vector2Int.right;
+                if (snakeEnabled && lastDirectionMoved != direction)
+                {
+                    moving = true;
+                    moveTimer = timeBetweenMoves;
+                }
+            }
+        }
+
+        if (!snakeEnabled)
+        {
+            return;
+        }
+
+        if (!moving)
+        {
+            return;
+        }
+
+        Move();
+    }
+
+    private void Move()
+    {
         GridCell nextCell;
-        bool teleported = false;
         if (teleportFlag)
         {
             nextCell = GridGenerator._Instance.FindUnoccupiedCell();
             teleportFlag = false;
-            teleported = true;
         }
         else
         {
             nextCell = currentCell.GetNeighbour(direction);
         }
 
-        // Restart scene if run into an obstruction
-
+        // Restart scene if player loses
         if (nextCell.HasInstantLossOccupant())
         {
             UIManager._Instance.OpenLoseScreen();
-            yield break;
+            snakeEnabled = false;
         }
         else if (nextCell.IsOccupiedByObstruction())
         {
@@ -87,45 +177,12 @@ public class SnakeBehaviour : GridCellOccupant
             else
             {
                 UIManager._Instance.OpenLoseScreen();
-                yield break;
+                snakeEnabled = false;
             }
         }
 
         lastDirectionMoved = direction;
         ChangeCell(nextCell);
-
-        if (teleported)
-            yield return new WaitForSeconds(teleportDelay);
-
-        yield return new WaitForSeconds(timeBetweenTicks);
-
-        StartCoroutine(Movement(false));
-    }
-
-    // Update is called once per frame
-    protected new void Update()
-    {
-        base.Update();
-        if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
-        {
-            if (lastDirectionMoved != Vector2Int.down)
-                direction = Vector2Int.up;
-        }
-        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-            if (lastDirectionMoved != Vector2Int.right)
-                direction = Vector2Int.left;
-        }
-        if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            if (lastDirectionMoved != Vector2Int.up)
-                direction = Vector2Int.down;
-        }
-        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            if (lastDirectionMoved != Vector2Int.left)
-                direction = Vector2Int.right;
-        }
     }
 
     public void Grow()
@@ -135,6 +192,10 @@ public class SnakeBehaviour : GridCellOccupant
 
         // Add new segments
         GridCell spawnCell = snakeSegments.Last.Value.PreviousCell;
+        if (spawnCell == null)
+        {
+            spawnCell = snakeSegments.Last.Value.CurrentCell.GetUnobstructedNeighbour();
+        }
         GridCellOccupant spawnedSegment = spawnCell.SpawnOccupant(snakeTailPrefab);
         snakeSegments.AddLast(spawnedSegment);
     }

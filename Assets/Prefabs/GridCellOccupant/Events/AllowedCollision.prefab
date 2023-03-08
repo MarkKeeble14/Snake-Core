@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 2830912294846392031}
   - component: {fileID: 8033776933873722306}
   m_Layer: 0
-  m_Name: AllowedCollisionPowerup
+  m_Name: AllowedCollision
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -33,7 +33,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 8874716630120515901}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -130,6 +131,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a510124f91cbac54d9ebaa5b296ba88e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  allowDoubling: 1
 --- !u!114 &8033776933873722306
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -142,3 +144,74 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f51134ef9424a944d937d281d6b21d96, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  allowDoubling: 0
+--- !u!1001 &6074272469785509739
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 349001341514531644}
+    m_Modifications:
+    - target: {fileID: 2182092811630002008, guid: 6e186dcbce339e64287382314e3a7e36,
+        type: 3}
+      propertyPath: eventType
+      value: Allowed Collision
+      objectReference: {fileID: 0}
+    - target: {fileID: 2182092811630002008, guid: 6e186dcbce339e64287382314e3a7e36,
+        type: 3}
+      propertyPath: quantitative
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3123644503058969167, guid: 6e186dcbce339e64287382314e3a7e36,
+        type: 3}
+      propertyPath: m_PresetInfoIsWorld
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3415264955709666902, guid: 6e186dcbce339e64287382314e3a7e36,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3415264955709666902, guid: 6e186dcbce339e64287382314e3a7e36,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3415264955709666902, guid: 6e186dcbce339e64287382314e3a7e36,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3415264955709666902, guid: 6e186dcbce339e64287382314e3a7e36,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 3415264955709666902, guid: 6e186dcbce339e64287382314e3a7e36,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3415264955709666902, guid: 6e186dcbce339e64287382314e3a7e36,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4987216873058485165, guid: 6e186dcbce339e64287382314e3a7e36,
+        type: 3}
+      propertyPath: m_text
+      value: +1 Allowed Collisions
+      objectReference: {fileID: 0}
+    - target: {fileID: 8232422315257893353, guid: 6e186dcbce339e64287382314e3a7e36,
+        type: 3}
+      propertyPath: m_Name
+      value: GridCellOccupantInfoCanvas
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 6e186dcbce339e64287382314e3a7e36, type: 3}
+--- !u!224 &8874716630120515901 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 3415264955709666902, guid: 6e186dcbce339e64287382314e3a7e36,
+    type: 3}
+  m_PrefabInstance: {fileID: 6074272469785509739}
+  m_PrefabAsset: {fileID: 0}

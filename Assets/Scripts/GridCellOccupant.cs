@@ -3,6 +3,7 @@
 public class GridCellOccupant : MonoBehaviour
 {
     [SerializeField] protected GridCell currentCell;
+    public GridCell CurrentCell => currentCell;
     [SerializeField] protected GridCell previousCell;
     public GridCell PreviousCell => previousCell;
     [SerializeField] private bool lockToCell = true;
@@ -24,7 +25,7 @@ public class GridCellOccupant : MonoBehaviour
     protected void Update()
     {
         if (lockToCell)
-            transform.position = currentCell.transform.position;
+            transform.position = currentCell.transform.position + (Vector3.up * transform.localScale.y / 2);
     }
 
     public virtual void ChangeCell(GridCell nextCell)
@@ -49,9 +50,13 @@ public class GridCellOccupant : MonoBehaviour
 
     public void TriggerEvents()
     {
-        foreach (TriggerEvent triggerEvents in GetComponents<TriggerEvent>())
+        foreach (TriggerEvent triggerEvent in GetComponents<TriggerEvent>())
         {
-            triggerEvents.Activate();
+            triggerEvent.Activate();
+            if (GridGenerator._Instance.DoublingEventTriggers && triggerEvent.AllowDoubling)
+            {
+                triggerEvent.Activate();
+            }
         }
     }
 }

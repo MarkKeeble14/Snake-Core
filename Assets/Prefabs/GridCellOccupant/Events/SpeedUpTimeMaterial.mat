@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: AllowedCollisionPowerup
+  m_Name: SpeedUpTimeMaterial
   m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
   m_ValidKeywords:
   - _EMISSION
@@ -120,8 +120,8 @@ Material:
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.11255562, g: 1, b: 0, a: 1}
-    - _Color: {r: 0.1125556, g: 1, b: 0, a: 1}
-    - _EmissionColor: {r: 0, g: 14.259475, b: 0.10159735, a: 1}
+    - _BaseColor: {r: 0.01612091, g: 0, b: 1, a: 1}
+    - _Color: {r: 0.01612091, g: 0, b: 1, a: 1}
+    - _EmissionColor: {r: 0.25299585, g: 0, b: 10.680627, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []

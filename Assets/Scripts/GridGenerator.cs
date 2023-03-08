@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using Cinemachine;
 
 public class GridGenerator : MonoBehaviour
 {
@@ -18,16 +19,9 @@ public class GridGenerator : MonoBehaviour
     [Header("Powerups")]
     [SerializeField] private int maxNumCoinsSpawned;
     [SerializeField] private int maxNumPowerupsSpawned;
+    [SerializeField] private int maxNumObstaclesSpawned;
 
     public GridCell[,] GridCells { get; private set; }
-
-
-    [Header("Time")]
-    [SerializeField] private float slowedDownTimeScale = .25f;
-    [SerializeField] private float alterTimeScaleSpeed = 1f;
-    [SerializeField] private TextMeshProUGUI slowDownTimeScaleText;
-    private float slowDownTimeTimer;
-    private float targetTimeScale;
 
     [Header("Prefabs")]
     [SerializeField] private GridCell gridCellPrefab;
@@ -36,11 +30,27 @@ public class GridGenerator : MonoBehaviour
     [SerializeField] private GridCellOccupant foodPrefab;
     [SerializeField] private GridCellOccupant coinPrefab;
     [SerializeField] private GridCellOccupant[] powerupPrefabs;
+    [SerializeField] private GridCellOccupant[] obstaclePrefabs;
+
+    [Header("Time")]
+    [SerializeField] private float alterTimeScaleSpeed = 1f;
+    [SerializeField] private TextMeshProUGUI slowDownTimeScaleText;
+    private float slowDownTimeTimer;
+    private float targetTimeScale;
+
+    [Header("Double Events")]
+    [SerializeField] private TextMeshProUGUI doubleEventsText;
+    private bool doublingEventTriggers;
+    public bool DoublingEventTriggers => doublingEventTriggers;
+    private float doubleEventTriggersTimer;
 
     [Header("References")]
     [SerializeField] private IntStore coins;
     private List<GridCellOccupant> spawnedCoins;
     private List<GridCellOccupant> spawnedPowerups;
+    private List<GridCellOccupant> spawnedObstacles;
+
+    [SerializeField] private CinemachineVirtualCamera vCam;
 
     private void Awake()
     {
@@ -53,6 +63,7 @@ public class GridGenerator : MonoBehaviour
         // Create Lists
         spawnedCoins = new List<GridCellOccupant>();
         spawnedPowerups = new List<GridCellOccupant>();
+        spawnedObstacles = new List<GridCellOccupant>();
 
         // Create array
         GridCells = new GridCell[numRows, numColumns];
@@ -96,7 +107,8 @@ public class GridGenerator : MonoBehaviour
         SpawnFood();
 
         // Spawn snake
-        FindUnoccupiedCell().SpawnOccupant(snakePrefab);
+        GridCellOccupant snake = FindUnoccupiedCell().SpawnOccupant(snakePrefab);
+        vCam.m_Follow = snake.transform;
     }
 
     private float SamplePerlinNoise(int x, int y)
@@ -146,12 +158,20 @@ public class GridGenerator : MonoBehaviour
         }
     }
 
-    public void SlowTime(float duration)
+    public void SpawnObstacle()
     {
-        if (slowDownTimeTimer < 0)
-            slowDownTimeTimer = duration;
-        else
-            slowDownTimeTimer += duration;
+        GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(obstaclePrefabs[UnityEngine.Random.Range(0, obstaclePrefabs.Length)]);
+        spawnedObstacles.Add(occupant);
+        if (occupant.TryGetComponent(out DestroySelfTriggerEvent destroySelf))
+        {
+            destroySelf.AddOnDestroyCallback(() => spawnedObstacles.Remove(occupant));
+        }
+    }
+
+    public void SlowTime(float changeTimeTo, float duration)
+    {
+        targetTimeScale = changeTimeTo;
+        slowDownTimeTimer += duration;
     }
 
     private void ChangeTime()
@@ -160,9 +180,7 @@ public class GridGenerator : MonoBehaviour
         {
             slowDownTimeTimer -= Time.unscaledDeltaTime;
 
-            targetTimeScale = slowedDownTimeScale;
-
-            slowDownTimeScaleText.text = System.Math.Round(slowDownTimeTimer, 2).ToString();
+            slowDownTimeScaleText.text = Math.Round(slowDownTimeTimer, 1).ToString();
             slowDownTimeScaleText.gameObject.SetActive(true);
         }
         else
@@ -175,10 +193,34 @@ public class GridGenerator : MonoBehaviour
         Time.timeScale = Mathf.Lerp(Time.timeScale, targetTimeScale, Time.unscaledDeltaTime * alterTimeScaleSpeed);
     }
 
+    public void DoubleEventTriggers(float duration)
+    {
+        doubleEventTriggersTimer += duration;
+    }
+
+    private void ChangeDoubleEventTriggers()
+    {
+        if (doubleEventTriggersTimer > 0)
+        {
+            doubleEventTriggersTimer -= Time.deltaTime;
+
+            doubleEventsText.text = "x2 Events: " + Math.Round(doubleEventTriggersTimer, 1).ToString();
+            doubleEventsText.gameObject.SetActive(true);
+
+            doublingEventTriggers = true;
+        }
+        else
+        {
+            doublingEventTriggers = false;
+
+            doubleEventsText.gameObject.SetActive(false);
+        }
+    }
+
     private void Update()
     {
         ChangeTime();
-
+        ChangeDoubleEventTriggers();
 
         if (spawnedCoins.Count < maxNumCoinsSpawned)
         {
@@ -188,6 +230,11 @@ public class GridGenerator : MonoBehaviour
         if (spawnedPowerups.Count < maxNumPowerupsSpawned)
         {
             SpawnPowerup();
+        }
+
+        if (spawnedObstacles.Count < maxNumObstaclesSpawned)
+        {
+            SpawnObstacle();
         }
     }
 }
