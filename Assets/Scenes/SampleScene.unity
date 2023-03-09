@@ -1143,10 +1143,11 @@ MonoBehaviour:
   wallPerlinNoiseScale: 20
   coinSamplePerlinMinimumValue: 0.65
   coinPerlinNoiseScale: 4
-  numRows: 25
-  numColumns: 25
+  numRows: 50
+  numColumns: 50
   safeAreaRows: 10
   safeAreaColumns: 10
+  numFoodSpawned: 2
   numCoinsSpawned: 0
   numPowerupsSpawned: 3
   numObstaclesSpawned: 3

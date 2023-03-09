@@ -23,8 +23,10 @@ public class GridGenerator : MonoBehaviour
     [SerializeField] private int numColumns;
     [SerializeField] private int safeAreaRows = 3;
     [SerializeField] private int safeAreaColumns = 3;
+    private Vector2 perlinRandomOffset;
 
     [Header("Powerups")]
+    [SerializeField] private int numFoodSpawned = 2;
     [SerializeField] private int numCoinsSpawned = 3;
     [SerializeField] private int numPowerupsSpawned = 1;
     [SerializeField] private int numObstaclesSpawned = 1;
@@ -67,6 +69,9 @@ public class GridGenerator : MonoBehaviour
 
         // Reset Coins
         coins.Reset();
+
+        // Generate new offset for perlin noise
+        perlinRandomOffset = new Vector2(UnityEngine.Random.Range(0, 1000), UnityEngine.Random.Range(0, 1000));
 
         // Create array
         GridCells = new GridCell[numRows, numColumns];
@@ -141,13 +146,14 @@ public class GridGenerator : MonoBehaviour
             }
         }
 
-
         // Spawn snake
         spawnedSnake = GridCells[numRows / 2, numColumns / 2].SpawnOccupant(snakePrefab);
         vCam.m_Follow = spawnedSnake.transform;
 
-        // Spawn food
-        SpawnFood();
+        for (int i = 0; i < numFoodSpawned; i++)
+        {
+            SpawnFood();
+        }
 
         for (int i = 0; i < numCoinsSpawned; i++)
         {
@@ -167,9 +173,9 @@ public class GridGenerator : MonoBehaviour
 
     private float SamplePerlinNoise(int x, int y, float scale)
     {
-        float xCoord = (float)x / numRows;
-        float yCoord = (float)y / numColumns;
-        float noiseValue = Mathf.PerlinNoise(xCoord * scale, yCoord * scale);
+        float xCoord = (x + perlinRandomOffset.x) / numRows * scale;
+        float yCoord = (y + perlinRandomOffset.y) / numColumns * scale;
+        float noiseValue = Mathf.PerlinNoise(xCoord, yCoord);
         // Debug.Log("x: " + x + ", xCoord: " + xCoord + ", y: " + y + ", yCoord: " + yCoord + ", noiseValue: " + noiseValue);
         return noiseValue;
     }
