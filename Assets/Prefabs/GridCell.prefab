@@ -46,7 +46,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f1d061f13c0e7f4894be67655c829a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  occupant: {fileID: 0}
+  selectedColor: {r: 1, g: 0.87339544, b: 0, a: 1}
+  defaultColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!23 &3593211652445380575
 MeshRenderer:
   m_ObjectHideFlags: 0

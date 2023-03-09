@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 public class SnakeBehaviour : GridCellOccupant
 {
     public static SnakeBehaviour _Instance { get; private set; }
@@ -12,23 +11,46 @@ public class SnakeBehaviour : GridCellOccupant
         _Instance = this;
     }
 
+    [Header("Settings")]
     [SerializeField] private Vector2Int direction = Vector2Int.right;
-    private Vector2Int lastDirectionMoved;
     [SerializeField] private float timeBetweenMoves = .25f;
+    [SerializeField] private float spawnDelay = 1f;
 
-    private LinkedList<GridCellOccupant> snakeSegments = new LinkedList<GridCellOccupant>();
+    [Header("Attacks")]
+
+    [Header("Break Ahead")]
+    [SerializeField] private float minBreakAheadRange;
+    [SerializeField] private float maxBreakAheadRange;
+    [SerializeField] private float gainBreakAheadRate;
+    [SerializeField] private float breakAheadCooldown;
+    private float breakAheadCooldownTimer;
+    [SerializeField] private FloatStore breakAheadCooldownPercent;
+
+    [Header("Break Around")]
+    [SerializeField] private float minBreakAroundRange;
+    [SerializeField] private float maxBreakAroundRange;
+    [SerializeField] private float gainBreakAroundRate;
+    [SerializeField] private float breakAroundCooldown;
+    private float breakAroundCooldownTimer;
+    [SerializeField] private FloatStore breakAroundCooldownPercent;
+
+    [Header("References")]
     [SerializeField] private GridCellOccupant snakeTailPrefab;
+    private LinkedList<GridCellOccupant> snakeSegments = new LinkedList<GridCellOccupant>();
 
+    [Header("UI")]
     [SerializeField] private IntStore segmentsCounter;
     [SerializeField] private IntStore allowedCollisions;
 
-    [SerializeField] private float spawnDelay = 1f;
-
+    private Vector2Int lastDirectionMoved;
     private bool snakeEnabled;
     private bool moving;
     private float moveTimer;
 
     private bool teleportFlag;
+
+    private bool isPreppingPierce;
+    private bool isPreppingAoE;
 
     private void Start()
     {
@@ -73,9 +95,29 @@ public class SnakeBehaviour : GridCellOccupant
     {
         base.Update();
 
+        if (breakAheadCooldownTimer > 0)
+        {
+            breakAheadCooldownTimer -= Time.deltaTime;
+        }
+        else
+        {
+            breakAheadCooldownTimer = 0;
+        }
+        if (breakAroundCooldownTimer > 0)
+        {
+            breakAroundCooldownTimer -= Time.deltaTime;
+        }
+        else
+        {
+            breakAroundCooldownTimer = 0;
+        }
+        breakAheadCooldownPercent.Value = breakAheadCooldownTimer / breakAheadCooldown;
+        breakAroundCooldownPercent.Value = breakAroundCooldownTimer / breakAroundCooldown;
+
         // Update forward
         transform.forward = new Vector3(direction.x, 0, direction.y);
 
+        // Track movement
         if (moveTimer > 0)
         {
             moveTimer -= Time.deltaTime;
@@ -141,12 +183,154 @@ public class SnakeBehaviour : GridCellOccupant
             return;
         }
 
+        // Pierce Shoot (Temporary)
+        if (Input.GetKeyDown(KeyCode.Alpha1) && breakAheadCooldownTimer <= 0 && !isPreppingPierce && !isPreppingAoE)
+        {
+            StartCoroutine(BreakAhead());
+        }
+
+        // AoE (Temporary)
+        if (Input.GetKeyDown(KeyCode.Alpha2) && breakAroundCooldownTimer <= 0 && !isPreppingAoE && !isPreppingPierce)
+        {
+            StartCoroutine(BreakAround());
+        }
+
         if (!moving)
         {
             return;
         }
 
+        if (isPreppingPierce)
+            SetSelectedCellBreakAhead(setRange);
+        else if (isPreppingAoE)
+            SetSelectedCellBreakAround(setRange);
         Move();
+    }
+
+    private List<GridCell> selectedCells = new List<GridCell>();
+    private int setRange;
+
+    private IEnumerator BreakAhead()
+    {
+        isPreppingPierce = true;
+
+        float currentRange = minBreakAheadRange;
+        setRange = Mathf.FloorToInt(currentRange);
+
+        while (Input.GetKey(KeyCode.Alpha1))
+        {
+            // 
+            if (currentRange <= maxBreakAheadRange)
+                currentRange += Time.deltaTime * gainBreakAheadRate;
+            else
+                currentRange = maxBreakAheadRange;
+
+            if (currentRange > setRange)
+            {
+                setRange = Mathf.FloorToInt(currentRange);
+                SetSelectedCellBreakAhead(setRange);
+            }
+            yield return null;
+        }
+
+        foreach (GridCell cell in selectedCells)
+        {
+            // Recieved a null cell
+            if (!cell) continue;
+
+            cell.BreakDestroyables();
+            cell.SetSelected(false);
+        }
+
+        setRange = 0;
+        isPreppingPierce = false;
+
+        breakAheadCooldownTimer = breakAheadCooldown;
+    }
+
+    private void SetSelectedCellBreakAhead(int range)
+    {
+        // Deselect previous cells
+        foreach (GridCell cell in selectedCells)
+        {
+            // Recieved a null cell
+            if (!cell) continue;
+            cell.SetSelected(false);
+        }
+
+        // Determine new cells to select
+        List<Vector2Int> pathDirections = new List<Vector2Int>();
+        for (int i = 0; i < range; i++)
+        {
+            pathDirections.Add(direction);
+        }
+        selectedCells = currentCell.GetPath(pathDirections, new List<GridCell>());
+
+        // Select new cells
+        foreach (GridCell cell in selectedCells)
+        {
+            // Recieved a null cell
+            if (!cell) continue;
+            cell.SetSelected(true);
+        }
+    }
+
+    private IEnumerator BreakAround()
+    {
+        isPreppingAoE = true;
+
+        float currentRange = minBreakAroundRange;
+        setRange = Mathf.FloorToInt(currentRange);
+
+        while (Input.GetKey(KeyCode.Alpha2))
+        {
+            // 
+            if (currentRange <= maxBreakAroundRange)
+                currentRange += Time.deltaTime * gainBreakAroundRate;
+            else
+                currentRange = maxBreakAroundRange;
+
+            if (currentRange > setRange)
+            {
+                setRange = Mathf.FloorToInt(currentRange);
+                SetSelectedCellBreakAround(setRange);
+            }
+            yield return null;
+        }
+
+        foreach (GridCell cell in selectedCells)
+        {
+            // Recieved a null cell
+            if (!cell) continue;
+
+            cell.BreakDestroyables();
+            cell.SetSelected(false);
+        }
+
+        setRange = 0;
+        isPreppingAoE = false;
+        breakAroundCooldownTimer = breakAroundCooldown;
+    }
+
+    private void SetSelectedCellBreakAround(int range)
+    {
+        // Deselect previous cells
+        foreach (GridCell cell in selectedCells)
+        {
+            if (!cell) continue;
+            cell.SetSelected(false);
+        }
+
+        // Determine new cells to select
+        selectedCells = currentCell.GetNeighbours(false, true, Mathf.RoundToInt(range));
+
+        // Select new cells
+        foreach (GridCell cell in selectedCells)
+        {
+            // Recieved a null cell
+            if (!cell) continue;
+            cell.SetSelected(true);
+        }
     }
 
     private void Move()
@@ -163,7 +347,7 @@ public class SnakeBehaviour : GridCellOccupant
         }
 
         // Restart scene if player loses
-        if (nextCell.HasInstantLossOccupant())
+        if (nextCell.IsBorderWall())
         {
             UIManager._Instance.OpenLoseScreen();
             snakeEnabled = false;
@@ -193,9 +377,7 @@ public class SnakeBehaviour : GridCellOccupant
         // Add new segments
         GridCell spawnCell = snakeSegments.Last.Value.PreviousCell;
         if (spawnCell == null)
-        {
-            spawnCell = snakeSegments.Last.Value.CurrentCell.GetUnobstructedNeighbour();
-        }
+            spawnCell = snakeSegments.Last.Value.CurrentCell.GetNeighbour(false, false);
         GridCellOccupant spawnedSegment = spawnCell.SpawnOccupant(snakeTailPrefab);
         snakeSegments.AddLast(spawnedSegment);
     }

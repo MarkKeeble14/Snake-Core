@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public class GridCellOccupant : MonoBehaviour
 {
@@ -8,19 +9,15 @@ public class GridCellOccupant : MonoBehaviour
     public GridCell PreviousCell => previousCell;
     [SerializeField] private bool lockToCell = true;
     [SerializeField] private bool obstruction;
-    public bool isObstruction => obstruction;
-    public bool IsInstantLoss { get; set; }
+    public bool IsObstruction => obstruction;
+    [SerializeField] private bool destroyable;
+    public bool IsDestroyable => destroyable;
+    public bool IsBorderWall { get; set; }
     [SerializeField] private bool triggersEvents;
     [SerializeField] private bool hasEvents;
     public bool HasEvents => hasEvents;
-
-    private void Awake()
-    {
-        if (TryGetComponent(out DestroySelfTriggerEvent destroySelf))
-        {
-            destroySelf.AddOnDestroyCallback(() => currentCell.RemoveOccupant(this));
-        }
-    }
+    [SerializeField] private bool breakOnEventsTriggered = true;
+    protected Action onDestroy;
 
     protected void Update()
     {
@@ -54,9 +51,21 @@ public class GridCellOccupant : MonoBehaviour
         {
             triggerEvent.Activate();
             if (GridGenerator._Instance.DoublingEventTriggers && triggerEvent.AllowDoubling)
-            {
                 triggerEvent.Activate();
-            }
         }
+        if (breakOnEventsTriggered)
+            Break();
+    }
+
+    public void AddOnDestroyCallback(Action callback)
+    {
+        onDestroy += callback;
+    }
+
+    public virtual void Break()
+    {
+        currentCell.RemoveOccupant(this);
+        onDestroy?.Invoke();
+        Destroy(gameObject);
     }
 }

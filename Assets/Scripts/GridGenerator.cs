@@ -5,21 +5,29 @@ using TMPro;
 using UnityEngine;
 using Cinemachine;
 
+
 public class GridGenerator : MonoBehaviour
 {
     // Also serves as a game manager
     public static GridGenerator _Instance { get; set; }
+
+    private GridCellOccupant spawnedSnake;
+
     [Header("Settings")]
     [Header("Generation")]
     [SerializeField] private float wallSamplePerlinMinimumValue = .45f;
-    [SerializeField] private float wallPerlinNoiseScale = 20f;
+    [SerializeField] private float wallPerlinNoiseScale = 3f;
+    [SerializeField] private float coinSamplePerlinMinimumValue = .55f;
+    [SerializeField] private float coinPerlinNoiseScale = 5f;
     [SerializeField] private int numRows;
     [SerializeField] private int numColumns;
+    [SerializeField] private int safeAreaRows = 3;
+    [SerializeField] private int safeAreaColumns = 3;
 
     [Header("Powerups")]
-    [SerializeField] private int maxNumCoinsSpawned;
-    [SerializeField] private int maxNumPowerupsSpawned;
-    [SerializeField] private int maxNumObstaclesSpawned;
+    [SerializeField] private int numCoinsSpawned = 3;
+    [SerializeField] private int numPowerupsSpawned = 1;
+    [SerializeField] private int numObstaclesSpawned = 1;
 
     public GridCell[,] GridCells { get; private set; }
 
@@ -31,6 +39,7 @@ public class GridGenerator : MonoBehaviour
     [SerializeField] private GridCellOccupant coinPrefab;
     [SerializeField] private GridCellOccupant[] powerupPrefabs;
     [SerializeField] private GridCellOccupant[] obstaclePrefabs;
+    [SerializeField] private ArrowPointer arrowPointer;
 
     [Header("Time")]
     [SerializeField] private float alterTimeScaleSpeed = 1f;
@@ -46,11 +55,10 @@ public class GridGenerator : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private IntStore coins;
-    private List<GridCellOccupant> spawnedCoins;
-    private List<GridCellOccupant> spawnedPowerups;
-    private List<GridCellOccupant> spawnedObstacles;
 
     [SerializeField] private CinemachineVirtualCamera vCam;
+
+    private List<ArrowPointer> spawnedFoodPointers = new List<ArrowPointer>();
 
     private void Awake()
     {
@@ -60,23 +68,32 @@ public class GridGenerator : MonoBehaviour
         // Reset Coins
         coins.Reset();
 
-        // Create Lists
-        spawnedCoins = new List<GridCellOccupant>();
-        spawnedPowerups = new List<GridCellOccupant>();
-        spawnedObstacles = new List<GridCellOccupant>();
-
         // Create array
         GridCells = new GridCell[numRows, numColumns];
 
+        // Sample Noise for Walls
         float[,] wallNoiseMap = new float[numRows, numColumns];
-        // Create noise texture
         for (int x = 0; x < numRows; x++)
         {
             for (int y = 0; y < numColumns; y++)
             {
-                wallNoiseMap[x, y] = SamplePerlinNoise(x, y);
+                wallNoiseMap[x, y] = SamplePerlinNoise(x, y, wallPerlinNoiseScale);
             }
         }
+
+        // Sample Noise for Coins
+        float[,] coinNoiseMap = new float[numRows, numColumns];
+        for (int x = 0; x < numRows; x++)
+        {
+            for (int y = 0; y < numColumns; y++)
+            {
+                coinNoiseMap[x, y] = SamplePerlinNoise(x, y, coinPerlinNoiseScale);
+            }
+        }
+
+        // Spawning safe area
+        Vector2 safeAreaXBounds = new Vector2((numRows / 2) - (safeAreaRows / 2), (numRows / 2) + (safeAreaRows / 2));
+        Vector2 safeAreaYBounds = new Vector2((numColumns / 2) - (safeAreaColumns / 2), (numColumns / 2) + (safeAreaColumns / 2));
 
         // Spawn cells
         for (int i = 0; i < numRows; i++)
@@ -88,34 +105,71 @@ public class GridGenerator : MonoBehaviour
                 GridCells[i, p] = spawned;
                 spawned.Set(i, p);
 
+                // inside of safe area
+                if (i > safeAreaXBounds.x && i < safeAreaXBounds.y && p > safeAreaYBounds.x && p < safeAreaYBounds.y)
+                {
+                    continue;
+                }
+
+                // Spawn Border Walls
                 if (i == 0 || i == numRows - 1 || p == 0 || p == numColumns - 1)
                 {
                     GridCellOccupant occupant = spawned.SpawnOccupant(wallPrefab);
                     occupant.transform.SetParent(transform, true);
-                    occupant.IsInstantLoss = true;
+                    occupant.IsBorderWall = true;
                     continue;
                 }
 
+                // Spawn Regular Wall
                 if (wallNoiseMap[i, p] > wallSamplePerlinMinimumValue)
                 {
-                    spawned.SpawnOccupant(wallPrefab).transform.SetParent(transform, true);
+                    // Spawn wall
+                    Wall wall = (Wall)spawned.SpawnOccupant(wallPrefab);
+                    // Add it as a child under the generator to reduce clutter
+                    wall.transform.SetParent(transform, true);
+
+                    // Set if wall should drop coin on break
+                    if (coinNoiseMap[i, p] > coinSamplePerlinMinimumValue)
+                    {
+                        wall.GetComponent<Renderer>().material.color = Color.yellow;
+                        wall.AddOnDestroyCallback(delegate
+                        {
+                            wall.CurrentCell.SpawnOccupant(coinPrefab);
+                        });
+                    }
                 }
             }
         }
 
-        // Spawn first food
-        SpawnFood();
 
         // Spawn snake
-        GridCellOccupant snake = FindUnoccupiedCell().SpawnOccupant(snakePrefab);
-        vCam.m_Follow = snake.transform;
+        spawnedSnake = GridCells[numRows / 2, numColumns / 2].SpawnOccupant(snakePrefab);
+        vCam.m_Follow = spawnedSnake.transform;
+
+        // Spawn food
+        SpawnFood();
+
+        for (int i = 0; i < numCoinsSpawned; i++)
+        {
+            SpawnCoin();
+        }
+
+        for (int i = 0; i < numPowerupsSpawned; i++)
+        {
+            SpawnPowerup();
+        }
+
+        for (int i = 0; i < numObstaclesSpawned; i++)
+        {
+            SpawnObstacle();
+        }
     }
 
-    private float SamplePerlinNoise(int x, int y)
+    private float SamplePerlinNoise(int x, int y, float scale)
     {
         float xCoord = (float)x / numRows;
         float yCoord = (float)y / numColumns;
-        float noiseValue = Mathf.PerlinNoise(xCoord * wallPerlinNoiseScale, yCoord * wallPerlinNoiseScale);
+        float noiseValue = Mathf.PerlinNoise(xCoord * scale, yCoord * scale);
         // Debug.Log("x: " + x + ", xCoord: " + xCoord + ", y: " + y + ", yCoord: " + yCoord + ", noiseValue: " + noiseValue);
         return noiseValue;
     }
@@ -135,37 +189,43 @@ public class GridGenerator : MonoBehaviour
 
     public void SpawnFood()
     {
-        FindUnoccupiedCell().SpawnOccupant(foodPrefab);
+        GridCellOccupant food = FindUnoccupiedCell().SpawnOccupant(foodPrefab);
+        ArrowPointer arrow = Instantiate(arrowPointer, spawnedSnake.transform.position, Quaternion.identity);
+        arrow.SetPointAt(spawnedSnake.transform, food.transform);
+        spawnedFoodPointers.Add(arrow);
+        food.AddOnDestroyCallback(delegate
+        {
+            spawnedFoodPointers.Remove(arrow);
+            Destroy(arrow.gameObject);
+            SpawnFood();
+        });
     }
 
     public void SpawnCoin()
     {
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(coinPrefab);
-        spawnedCoins.Add(occupant);
-        if (occupant.TryGetComponent(out DestroySelfTriggerEvent destroySelf))
+        occupant.AddOnDestroyCallback(delegate
         {
-            destroySelf.AddOnDestroyCallback(() => spawnedCoins.Remove(occupant));
-        }
+            SpawnCoin();
+        });
     }
 
     public void SpawnPowerup()
     {
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(powerupPrefabs[UnityEngine.Random.Range(0, powerupPrefabs.Length)]);
-        spawnedPowerups.Add(occupant);
-        if (occupant.TryGetComponent(out DestroySelfTriggerEvent destroySelf))
+        occupant.AddOnDestroyCallback(delegate
         {
-            destroySelf.AddOnDestroyCallback(() => spawnedPowerups.Remove(occupant));
-        }
+            SpawnPowerup();
+        });
     }
 
     public void SpawnObstacle()
     {
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(obstaclePrefabs[UnityEngine.Random.Range(0, obstaclePrefabs.Length)]);
-        spawnedObstacles.Add(occupant);
-        if (occupant.TryGetComponent(out DestroySelfTriggerEvent destroySelf))
+        occupant.AddOnDestroyCallback(delegate
         {
-            destroySelf.AddOnDestroyCallback(() => spawnedObstacles.Remove(occupant));
-        }
+            SpawnObstacle();
+        });
     }
 
     public void SlowTime(float changeTimeTo, float duration)
@@ -221,20 +281,5 @@ public class GridGenerator : MonoBehaviour
     {
         ChangeTime();
         ChangeDoubleEventTriggers();
-
-        if (spawnedCoins.Count < maxNumCoinsSpawned)
-        {
-            SpawnCoin();
-        }
-
-        if (spawnedPowerups.Count < maxNumPowerupsSpawned)
-        {
-            SpawnPowerup();
-        }
-
-        if (spawnedObstacles.Count < maxNumObstaclesSpawned)
-        {
-            SpawnObstacle();
-        }
     }
 }

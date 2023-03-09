@@ -116,3 +116,4 @@ MonoBehaviour:
   obstruction: 1
   triggersEvents: 0
   hasEvents: 0
+  breakOnEventsTriggered: 0

@@ -5,10 +5,20 @@ using UnityEngine;
 
 public class GridCell : MonoBehaviour
 {
+    [SerializeField] private Color selectedColor;
+    [SerializeField] private Color defaultColor;
+
+    private Material material;
+
     private int x, y;
 
     public bool isOccupied => occupants.Count > 0;
-    [SerializeField] private List<GridCellOccupant> occupants = new List<GridCellOccupant>();
+    private List<GridCellOccupant> occupants = new List<GridCellOccupant>();
+
+    private void Awake()
+    {
+        material = GetComponent<Renderer>().material;
+    }
 
     public void Set(int x, int y)
     {
@@ -16,26 +26,41 @@ public class GridCell : MonoBehaviour
         this.y = y;
     }
 
+    public void SetSelected(bool selected)
+    {
+        if (selected)
+            material.color = selectedColor;
+        else
+            material.color = defaultColor;
+    }
+
     public GridCell GetNeighbour(Vector2Int neighbouringDirection)
     {
-        return GridGenerator._Instance.GridCells[x + neighbouringDirection.x, y + neighbouringDirection.y];
+        try
+        {
+            return GridGenerator._Instance.GridCells[x + neighbouringDirection.x, y + neighbouringDirection.y];
+        }
+        catch // Tried to access outside of array bounds
+        {
+            return null;
+        }
     }
 
     public bool HasObstructionOccupant()
     {
         foreach (GridCellOccupant occupant in occupants)
         {
-            if (occupant.isObstruction)
+            if (occupant.IsObstruction)
                 return true;
         }
         return false;
     }
 
-    public bool HasInstantLossOccupant()
+    public bool IsBorderWall()
     {
         foreach (GridCellOccupant occupant in occupants)
         {
-            if (occupant.IsInstantLoss)
+            if (occupant.IsBorderWall)
                 return true;
         }
         return false;
@@ -78,23 +103,109 @@ public class GridCell : MonoBehaviour
         return occupant;
     }
 
-    public GridCell GetUnobstructedNeighbour()
+    public List<GridCell> GetPath(List<Vector2Int> directions, List<GridCell> path)
     {
-        List<Vector2Int> neighbouringDirections = new List<Vector2Int> { Vector2Int.up, Vector2Int.left, Vector2Int.down, Vector2Int.right };
-        return GetUnobstructedNeighbour(neighbouringDirections);
+        if (directions.Count == 0) return path;
+        GridCell nextNode = GetNeighbour(directions[0]);
+        if (nextNode == null) return path;
+        directions.Remove(directions[0]);
+        path.Add(nextNode);
+        return nextNode.GetPath(directions, path);
     }
 
-    private GridCell GetUnobstructedNeighbour(List<Vector2Int> options)
+    private List<Vector2Int> GetNeighbouringDirections(bool includeDiagonals)
     {
-        Vector2Int direction = options[UnityEngine.Random.Range(0, options.Count)];
-        GridCell neighbour = GetNeighbour(direction);
-        if (neighbour.IsOccupiedByObstruction())
+        List<Vector2Int> neighbouringDirections = new List<Vector2Int> { Vector2Int.up, Vector2Int.left, Vector2Int.down, Vector2Int.right };
+        if (includeDiagonals)
+            neighbouringDirections.AddRange(new List<Vector2Int> { new Vector2Int(-1, 1), new Vector2Int(-1, -1), new Vector2Int(1, -1), new Vector2Int(1, 1) });
+        return neighbouringDirections;
+    }
+
+    public GridCell GetNeighbour(bool includeDiagonals, bool allowObstructed)
+    {
+        List<GridCell> options = GetNeighbours(includeDiagonals, allowObstructed);
+        if (options.Count == 0) return null;
+        return options[UnityEngine.Random.Range(0, options.Count)];
+    }
+
+    public List<GridCell> GetNeighbours(bool includeDiagonals, bool allowObstructed, int steps = 1)
+    {
+        List<Vector2Int> neighbouringDirections = GetNeighbouringDirections(includeDiagonals);
+        List<GridCell> neighbours = new List<GridCell>();
+
+        foreach (Vector2Int direction in neighbouringDirections)
+            neighbours.Add(GetNeighbour(direction));
+
+        // One less step
+        steps--;
+
+        // if out of steps, return list
+        if (steps == 0)
         {
-            options.Remove(direction);
-            neighbour = GetUnobstructedNeighbour(options);
+            return neighbours;
         }
-        if (neighbour.IsOccupiedByObstruction())
-            return null;
-        return neighbour;
+        else // otherwise
+        {
+            List<GridCell> nextNeighbours = new List<GridCell>();
+            // add the neighbours of all previous neighbours to the list as well
+            foreach (GridCell cell in neighbours)
+            {
+                // if recieved a null cell, we can skip it
+                if (!cell) continue;
+
+                // Get all neighbours of the other cell
+                List<GridCell> cellNeighbours = cell.GetNeighbours(includeDiagonals, allowObstructed, steps);
+                foreach (GridCell cellNeighbour in cellNeighbours)
+                {
+                    // Make sure we don't add duplicates
+                    if (neighbours.Contains(cellNeighbour))
+                    {
+                        continue;
+                    }
+                    // Make sure we don't add obstructed cells if specified
+                    if (!allowObstructed && cellNeighbour.IsOccupiedByObstruction())
+                    {
+                        continue;
+                    }
+
+                    // Passed checks, valid neighbour
+                    nextNeighbours.Add(cellNeighbour);
+                }
+            }
+            neighbours.AddRange(nextNeighbours);
+            return neighbours;
+        }
+    }
+
+    public void BreakObstructions()
+    {
+        for (int i = 0; i < occupants.Count;)
+        {
+            GridCellOccupant occupant = occupants[i];
+            if (occupant.IsObstruction && !occupant.IsBorderWall)
+            {
+                occupant.Break();
+            }
+            else
+            {
+                i++;
+            }
+        }
+    }
+
+    public void BreakDestroyables()
+    {
+        for (int i = 0; i < occupants.Count;)
+        {
+            GridCellOccupant occupant = occupants[i];
+            if (occupant.IsDestroyable && !occupant.IsBorderWall)
+            {
+                occupant.Break();
+            }
+            else
+            {
+                i++;
+            }
+        }
     }
 }

@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 349001341514531647}
   - component: {fileID: 8952205656089471790}
   - component: {fileID: -3623101262228407125}
-  - component: {fileID: 8033776933873722306}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -119,6 +118,7 @@ MonoBehaviour:
   obstruction: 0
   triggersEvents: 0
   hasEvents: 1
+  breakOnEventsTriggered: 1
 --- !u!114 &-3623101262228407125
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -134,19 +134,6 @@ MonoBehaviour:
   allowDoubling: 1
   coinStore: {fileID: 11400000, guid: 7c9d4758c50694c458929e2be73cd136, type: 2}
   amount: 1
---- !u!114 &8033776933873722306
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 349001341514531633}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f51134ef9424a944d937d281d6b21d96, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  allowDoubling: 0
 --- !u!1001 &3502702875017594083
 PrefabInstance:
   m_ObjectHideFlags: 0
