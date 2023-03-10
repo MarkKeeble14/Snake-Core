@@ -135,6 +135,8 @@ MonoBehaviour:
   allowDoubling: 1
   duration: 5
   changeTimeTo: 2
+  alterDuration: {fileID: 11400000, guid: d95dbd81d223b62458e3319b54d92da8, type: 2}
+  alterTimeScale: {fileID: 11400000, guid: cb83c231af5e6b146aa799a789ad9342, type: 2}
 --- !u!1001 &5673885299455103194
 PrefabInstance:
   m_ObjectHideFlags: 0

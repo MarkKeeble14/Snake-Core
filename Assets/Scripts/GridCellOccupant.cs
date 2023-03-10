@@ -16,28 +16,32 @@ public class GridCellOccupant : MonoBehaviour
     [SerializeField] private bool triggersEvents;
     [SerializeField] private bool hasEvents;
     public bool HasEvents => hasEvents;
+    [SerializeField] private bool isSnake;
+    public bool IsSnake => isSnake;
+
     [SerializeField] private bool breakOnEventsTriggered = true;
     protected Action onDestroy;
 
     protected void Update()
     {
         if (lockToCell)
+        {
             transform.position = currentCell.transform.position + (Vector3.up * transform.localScale.y / 2);
+        }
     }
 
     public virtual void ChangeCell(GridCell nextCell)
     {
-        if (triggersEvents
-            && nextCell.isOccupied)
-        {
-            nextCell.TriggerEvents();
-        }
-
         // Debug.Log("Previous: " + previousCell + ", Current: " + currentCell);
         previousCell = currentCell;
         currentCell.RemoveOccupant(this);
         nextCell.AddOccupant(this);
         currentCell = nextCell;
+
+        if (triggersEvents)
+        {
+            currentCell.TriggerEvents();
+        }
     }
 
     public void SetToCell(GridCell cell)
@@ -49,9 +53,11 @@ public class GridCellOccupant : MonoBehaviour
     {
         foreach (TriggerEvent triggerEvent in GetComponents<TriggerEvent>())
         {
-            triggerEvent.Activate();
-            if (GridGenerator._Instance.DoublingEventTriggers && triggerEvent.AllowDoubling)
+            for (int i = 0; i < GridGenerator._Instance.EventTriggerRepeats; i++)
+            {
                 triggerEvent.Activate();
+                if (!triggerEvent.AllowDoubling) break;
+            }
         }
         if (breakOnEventsTriggered)
             Break();

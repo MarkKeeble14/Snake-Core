@@ -14,7 +14,6 @@ public class SnakeBehaviour : GridCellOccupant
     [Header("Settings")]
     [SerializeField] private Vector2Int direction = Vector2Int.right;
     [SerializeField] private float timeBetweenMoves = .25f;
-    [SerializeField] private float spawnDelay = 1f;
 
     [Header("Attacks")]
 
@@ -64,8 +63,16 @@ public class SnakeBehaviour : GridCellOccupant
 
         // Add head to linked list
         snakeSegments.AddFirst(this);
+    }
 
-        StartCoroutine(Movement());
+    public void StartMoving(float delay)
+    {
+        snakeEnabled = true;
+    }
+
+    public void StopMoving()
+    {
+        snakeEnabled = false;
     }
 
     public override void ChangeCell(GridCell nextCell)
@@ -83,9 +90,9 @@ public class SnakeBehaviour : GridCellOccupant
         }
     }
 
-    private IEnumerator Movement()
+    private IEnumerator Movement(float delay)
     {
-        yield return new WaitForSeconds(spawnDelay);
+        yield return new WaitForSeconds(delay);
 
         snakeEnabled = true;
     }
@@ -382,9 +389,9 @@ public class SnakeBehaviour : GridCellOccupant
         snakeSegments.AddLast(spawnedSegment);
     }
 
-    public void AddAllowedCollision()
+    public void AddAllowedCollision(int amount)
     {
-        allowedCollisions.Value++;
+        allowedCollisions.Value += amount;
     }
 
     public void Teleport()

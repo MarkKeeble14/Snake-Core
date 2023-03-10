@@ -208,4 +208,19 @@ public class GridCell : MonoBehaviour
             }
         }
     }
+
+    public void Delete()
+    {
+        for (int i = 0; i < occupants.Count;)
+        {
+            GridCellOccupant occupant = occupants[i];
+            if (occupant.IsSnake)
+            {
+                i++;
+                continue;
+            };
+            occupant.Break();
+        }
+        Destroy(gameObject);
+    }
 }

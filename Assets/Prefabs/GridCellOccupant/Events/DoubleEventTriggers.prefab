@@ -116,6 +116,7 @@ MonoBehaviour:
   previousCell: {fileID: 0}
   lockToCell: 1
   obstruction: 0
+  destroyable: 0
   triggersEvents: 0
   hasEvents: 1
   breakOnEventsTriggered: 1
@@ -131,8 +132,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a83b8a5f76cbd464e8802eda32b7a828, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowDoubling: 1
-  duration: 5
+  allowDoubling: 0
+  durationChange: {fileID: 11400000, guid: dfc1d6ba281481d4995e641ee0d2d360, type: 2}
 --- !u!1001 &337467353828328778
 PrefabInstance:
   m_ObjectHideFlags: 0

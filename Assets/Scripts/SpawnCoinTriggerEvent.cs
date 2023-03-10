@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-public class SpawnCoinEventTrigger : TriggerEvent
+public class SpawnCoinTriggerEvent : TriggerEvent
 {
     public override void Activate()
     {

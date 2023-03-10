@@ -1,12 +1,17 @@
 ﻿using UnityEngine;
 
 [CreateAssetMenu(fileName = "IntStore", menuName = "IntStore")]
-public class IntStore : ScriptableObject
+public class IntStore : NumStore
 {
     public int Value { get; set; }
     [SerializeField] private int defaultValue;
-    public void Reset()
+    public override void Reset()
     {
         Value = defaultValue;
+    }
+
+    public override float GetValue()
+    {
+        return Value;
     }
 }

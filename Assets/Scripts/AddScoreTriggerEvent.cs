@@ -5,10 +5,10 @@ using UnityEngine;
 public class AddScoreTriggerEvent : TriggerEvent
 {
     [SerializeField] private IntStore coinStore;
-    [SerializeField] private int amount;
+    [SerializeField] private IntStore valueChange;
 
     public override void Activate()
     {
-        coinStore.Value += amount;
+        coinStore.Value += valueChange.Value;
     }
 }

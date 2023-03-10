@@ -11,7 +11,7 @@ public class GridGenerator : MonoBehaviour
     // Also serves as a game manager
     public static GridGenerator _Instance { get; set; }
 
-    private GridCellOccupant spawnedSnake;
+    private SnakeBehaviour spawnedSnake;
 
     [Header("Settings")]
     [Header("Generation")]
@@ -25,6 +25,13 @@ public class GridGenerator : MonoBehaviour
     [SerializeField] private int safeAreaColumns = 3;
     private Vector2 perlinRandomOffset;
 
+    [Header("Regeneration")]
+    [SerializeField] private int increaseRowsUponRegenerate = 5;
+    [SerializeField] private int increaseColumnsUponRegenerate = 5;
+    [SerializeField] private int increaseFoodUponRegenerate = 1;
+    [SerializeField] private int increaseObstaclesUponRegenerate = 1;
+    [SerializeField] private int increasePowerupsUponRegenerate = 1;
+
     [Header("Powerups")]
     [SerializeField] private int numFoodSpawned = 2;
     [SerializeField] private int numCoinsSpawned = 3;
@@ -35,7 +42,7 @@ public class GridGenerator : MonoBehaviour
 
     [Header("Prefabs")]
     [SerializeField] private GridCell gridCellPrefab;
-    [SerializeField] private GridCellOccupant snakePrefab;
+    [SerializeField] private SnakeBehaviour snakePrefab;
     [SerializeField] private GridCellOccupant wallPrefab;
     [SerializeField] private GridCellOccupant foodPrefab;
     [SerializeField] private GridCellOccupant coinPrefab;
@@ -48,12 +55,14 @@ public class GridGenerator : MonoBehaviour
     [SerializeField] private TextMeshProUGUI slowDownTimeScaleText;
     private float slowDownTimeTimer;
     private float targetTimeScale;
+    private bool paused;
+    public bool IsPaused => paused;
 
     [Header("Double Events")]
     [SerializeField] private TextMeshProUGUI doubleEventsText;
-    private bool doublingEventTriggers;
-    public bool DoublingEventTriggers => doublingEventTriggers;
     private float doubleEventTriggersTimer;
+    private int eventTriggerRepeats = 1;
+    public int EventTriggerRepeats => eventTriggerRepeats;
 
     [Header("References")]
     [SerializeField] private IntStore coins;
@@ -61,6 +70,11 @@ public class GridGenerator : MonoBehaviour
     [SerializeField] private CinemachineVirtualCamera vCam;
 
     private List<ArrowPointer> spawnedFoodPointers = new List<ArrowPointer>();
+    private string cardAlterationsResourcePath = "CardAlterations/";
+
+    private bool regenerating;
+
+    private List<Wall> spawnedOres = new List<Wall>();
 
     private void Awake()
     {
@@ -70,8 +84,42 @@ public class GridGenerator : MonoBehaviour
         // Reset Coins
         coins.Reset();
 
+        // Reset Cards
+        ResetCardAlterations();
+
+        Generate();
+
+        // Spawn snake
+        spawnedSnake = (SnakeBehaviour)GridCells[numRows / 2, numColumns / 2].SpawnOccupant(snakePrefab);
+        vCam.m_Follow = spawnedSnake.transform;
+
+        for (int i = 0; i < numFoodSpawned; i++)
+        {
+            SpawnFood();
+        }
+
+        for (int i = 0; i < numCoinsSpawned; i++)
+        {
+            SpawnCoin();
+        }
+
+        for (int i = 0; i < numPowerupsSpawned; i++)
+        {
+            SpawnPowerup();
+        }
+
+        for (int i = 0; i < numObstaclesSpawned; i++)
+        {
+            SpawnObstacle();
+        }
+
+        spawnedSnake.StartMoving(1f);
+    }
+
+    private void Generate()
+    {
         // Generate new offset for perlin noise
-        perlinRandomOffset = new Vector2(UnityEngine.Random.Range(0, 1000), UnityEngine.Random.Range(0, 1000));
+        perlinRandomOffset = new Vector2(UnityEngine.Random.Range(0.0f, 1000), UnityEngine.Random.Range(0.0f, 1000));
 
         // Create array
         GridCells = new GridCell[numRows, numColumns];
@@ -122,6 +170,7 @@ public class GridGenerator : MonoBehaviour
                     GridCellOccupant occupant = spawned.SpawnOccupant(wallPrefab);
                     occupant.transform.SetParent(transform, true);
                     occupant.IsBorderWall = true;
+                    occupant.GetComponent<Renderer>().material.color = Color.red;
                     continue;
                 }
 
@@ -137,18 +186,54 @@ public class GridGenerator : MonoBehaviour
                     if (coinNoiseMap[i, p] > coinSamplePerlinMinimumValue)
                     {
                         wall.GetComponent<Renderer>().material.color = Color.yellow;
+                        spawnedOres.Add(wall);
                         wall.AddOnDestroyCallback(delegate
                         {
                             wall.CurrentCell.SpawnOccupant(coinPrefab);
+                            spawnedOres.Remove(wall);
+
+                            // No more ore's, regenerate grid
+                            if (spawnedOres.Count == 0)
+                            {
+                                Regenerate();
+                            }
                         });
                     }
                 }
             }
         }
+    }
 
-        // Spawn snake
-        spawnedSnake = GridCells[numRows / 2, numColumns / 2].SpawnOccupant(snakePrefab);
-        vCam.m_Follow = spawnedSnake.transform;
+    private void Regenerate()
+    {
+        regenerating = true;
+        spawnedSnake.StopMoving();
+
+        while (spawnedFoodPointers.Count > 0)
+        {
+            Destroy(spawnedFoodPointers[0].gameObject);
+            spawnedFoodPointers.RemoveAt(0);
+        }
+
+        for (int i = 0; i < numRows; i++)
+        {
+            for (int p = 0; p < numColumns; p++)
+            {
+                GridCell cell = GridCells[i, p];
+                cell.Delete();
+            }
+        }
+
+        numFoodSpawned += increaseFoodUponRegenerate;
+        numPowerupsSpawned += increasePowerupsUponRegenerate;
+        numObstaclesSpawned += increaseObstaclesUponRegenerate;
+        numRows += increaseRowsUponRegenerate;
+        numColumns += increaseColumnsUponRegenerate;
+
+        Generate();
+        regenerating = false;
+
+        spawnedSnake.SetToCell(GridCells[numRows / 2, numColumns / 2]);
 
         for (int i = 0; i < numFoodSpawned; i++)
         {
@@ -169,6 +254,8 @@ public class GridGenerator : MonoBehaviour
         {
             SpawnObstacle();
         }
+
+        spawnedSnake.StartMoving(1f);
     }
 
     private float SamplePerlinNoise(int x, int y, float scale)
@@ -195,6 +282,7 @@ public class GridGenerator : MonoBehaviour
 
     public void SpawnFood()
     {
+        if (regenerating) return;
         GridCellOccupant food = FindUnoccupiedCell().SpawnOccupant(foodPrefab);
         ArrowPointer arrow = Instantiate(arrowPointer, spawnedSnake.transform.position, Quaternion.identity);
         arrow.SetPointAt(spawnedSnake.transform, food.transform);
@@ -209,6 +297,7 @@ public class GridGenerator : MonoBehaviour
 
     public void SpawnCoin()
     {
+        if (regenerating) return;
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(coinPrefab);
         occupant.AddOnDestroyCallback(delegate
         {
@@ -218,6 +307,7 @@ public class GridGenerator : MonoBehaviour
 
     public void SpawnPowerup()
     {
+        if (regenerating) return;
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(powerupPrefabs[UnityEngine.Random.Range(0, powerupPrefabs.Length)]);
         occupant.AddOnDestroyCallback(delegate
         {
@@ -227,6 +317,7 @@ public class GridGenerator : MonoBehaviour
 
     public void SpawnObstacle()
     {
+        if (regenerating) return;
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(obstaclePrefabs[UnityEngine.Random.Range(0, obstaclePrefabs.Length)]);
         occupant.AddOnDestroyCallback(delegate
         {
@@ -259,8 +350,10 @@ public class GridGenerator : MonoBehaviour
         Time.timeScale = Mathf.Lerp(Time.timeScale, targetTimeScale, Time.unscaledDeltaTime * alterTimeScaleSpeed);
     }
 
+
     public void DoubleEventTriggers(float duration)
     {
+        eventTriggerRepeats = 2;
         doubleEventTriggersTimer += duration;
     }
 
@@ -270,21 +363,42 @@ public class GridGenerator : MonoBehaviour
         {
             doubleEventTriggersTimer -= Time.deltaTime;
 
-            doubleEventsText.text = "x2 Events: " + Math.Round(doubleEventTriggersTimer, 1).ToString();
+            doubleEventsText.text = "x" + eventTriggerRepeats + " Events: " + Math.Round(doubleEventTriggersTimer, 1).ToString();
             doubleEventsText.gameObject.SetActive(true);
 
-            doublingEventTriggers = true;
         }
         else
         {
-            doublingEventTriggers = false;
+            eventTriggerRepeats = 1;
 
             doubleEventsText.gameObject.SetActive(false);
         }
     }
 
+    public void Pause()
+    {
+        Time.timeScale = 0;
+        paused = true;
+    }
+
+    public void Resume()
+    {
+        paused = false;
+    }
+
+    [ContextMenu("Reset Card Alterations")]
+    private void ResetCardAlterations()
+    {
+        NumStore[] cardAlterations = Resources.LoadAll<NumStore>(cardAlterationsResourcePath);
+        foreach (NumStore store in cardAlterations)
+        {
+            store.Reset();
+        }
+    }
+
     private void Update()
     {
+        if (paused) return;
         ChangeTime();
         ChangeDoubleEventTriggers();
     }

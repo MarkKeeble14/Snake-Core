@@ -118,10 +118,10 @@ MonoBehaviour:
   destroyable: 0
   triggersEvents: 1
   hasEvents: 0
+  isSnake: 1
   breakOnEventsTriggered: 0
   direction: {x: 0, y: 1}
   timeBetweenMoves: 0.5
-  spawnDelay: 1
   minBreakAheadRange: 1
   maxBreakAheadRange: 4
   gainBreakAheadRate: 1.5
