@@ -117,4 +117,22 @@ MonoBehaviour:
   destroyable: 1
   triggersEvents: 0
   hasEvents: 0
+  isSnake: 0
   breakOnEventsTriggered: 1
+  colorOptions:
+    dictionary:
+    - key: 0
+      value:
+      - {r: 1, g: 0.97334313, b: 0, a: 1}
+      - {r: 1, g: 0.8977677, b: 0, a: 1}
+      - {r: 0.93052006, g: 1, b: 0, a: 1}
+    - key: 1
+      value:
+      - {r: 0.5566038, g: 0.5566038, b: 0.5566038, a: 1}
+      - {r: 0.16981131, g: 0.16981131, b: 0.16981131, a: 1}
+      - {r: 0.2924528, g: 0.2924528, b: 0.2924528, a: 1}
+    - key: 2
+      value:
+      - {r: 0, g: 0.09939933, b: 1, a: 1}
+      - {r: 0, g: 0.49169493, b: 1, a: 1}
+      - {r: 0, g: 0.26066065, b: 1, a: 1}

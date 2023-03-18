@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
 public class SelectionCard : MonoBehaviour
 {
@@ -8,15 +9,9 @@ public class SelectionCard : MonoBehaviour
 
     [SerializeField] private TextMeshProUGUI label;
     [SerializeField] private TextMeshProUGUI details;
-    [SerializeField] private TextMeshProUGUI cost;
-    private CanvasGroup canvasGroup;
-    [SerializeField] private float insufficientFundsAlpha = .45f;
+    private Image cardBackground;
 
-    private void Awake()
-    {
-        // Get reference
-        canvasGroup = GetComponent<CanvasGroup>();
-    }
+    [SerializeField] private CardType type;
 
     public void AddOnSelectAction(Action action)
     {
@@ -28,23 +23,21 @@ public class SelectionCard : MonoBehaviour
         onSelect?.Invoke();
     }
 
-    public void Set(bool buyable, string label, string details, int cost, Action p)
+    public void Set(string label, string details, Action p)
     {
-        if (buyable)
-        {
-            this.label.text = label;
-            this.details.text = details;
-            this.cost.text = "-" + cost + " Coins";
-            AddOnSelectAction(p);
-        }
-        else
-        {
-            this.label.text = "";
-            this.details.text = "Not Enough Money";
-            this.details.color = Color.red;
-            this.cost.text = "-" + cost + " Coins";
-            onSelect = null;
-            canvasGroup.alpha = insufficientFundsAlpha;
-        }
+        // Get reference
+        cardBackground = transform.GetChild(0).GetComponent<Image>();
+
+        // Set UI
+        this.label.text = label;
+        this.details.text = details;
+
+        // Set Action
+        AddOnSelectAction(p);
+
+        // Set Card Color
+        Color c = UIManager._Instance.CardTypeColorDictionary[type];
+        c.a = .5f;
+        cardBackground.color = c;
     }
 }

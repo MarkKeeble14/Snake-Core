@@ -119,6 +119,7 @@ MonoBehaviour:
   destroyable: 0
   triggersEvents: 0
   hasEvents: 1
+  isSnake: 0
   breakOnEventsTriggered: 1
 --- !u!114 &2690716052913752294
 MonoBehaviour:

@@ -1,22 +1,26 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
 
-public class IntStoreDisplay : MonoBehaviour
+public class IntStoreDisplay : StoreDisplay
 {
-    [SerializeField] private IntStore intStore;
-    [SerializeField] private string prefix;
-    [SerializeField] private string suffix;
-    private TextMeshProUGUI text;
+    [SerializeField] private IntStore store;
+    [SerializeField] private bool showAtZero;
 
-    private void Awake()
+    protected override bool Enabled
     {
-        text = GetComponent<TextMeshProUGUI>();
+        get
+        {
+            if (showAtZero)
+            {
+                return true;
+            }
+            else
+            {
+                return store.Value > 0;
+            }
+        }
     }
 
-    private void Update()
-    {
-        text.text = prefix + intStore.Value + suffix;
-    }
+    protected override string storeValue => store.Value.ToString();
 }

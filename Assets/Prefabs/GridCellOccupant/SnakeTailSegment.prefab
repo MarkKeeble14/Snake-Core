@@ -114,6 +114,8 @@ MonoBehaviour:
   previousCell: {fileID: 0}
   lockToCell: 1
   obstruction: 1
+  destroyable: 0
   triggersEvents: 0
   hasEvents: 0
+  isSnake: 0
   breakOnEventsTriggered: 0

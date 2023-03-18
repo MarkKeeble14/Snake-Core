@@ -6,7 +6,7 @@ using UnityEngine;
 public class GridCell : MonoBehaviour
 {
     [SerializeField] private Color selectedColor;
-    [SerializeField] private Color defaultColor;
+    private Color defaultColor;
 
     private Material material;
 
@@ -18,6 +18,7 @@ public class GridCell : MonoBehaviour
     private void Awake()
     {
         material = GetComponent<Renderer>().material;
+        defaultColor = material.color;
     }
 
     public void Set(int x, int y)

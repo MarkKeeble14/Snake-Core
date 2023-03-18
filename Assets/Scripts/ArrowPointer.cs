@@ -5,6 +5,9 @@ public class ArrowPointer : MonoBehaviour
     private Transform follow;
     private Transform pointAt;
     [SerializeField] private float followRadius;
+    [SerializeField] private Vector3 followHeightOffset = new Vector3(0, 5, 0);
+    private Vector3 followPosition;
+
     public void SetPointAt(Transform follow, Transform pointAt)
     {
         this.follow = follow;
@@ -14,11 +17,12 @@ public class ArrowPointer : MonoBehaviour
     private void Update()
     {
         if (pointAt == null) return;
-        transform.position = SetPosition(follow, pointAt.position);
-        transform.LookAt(pointAt.position, Vector3.up);
+        SetPosition(follow, pointAt.position);
+        transform.position = followPosition + followHeightOffset;
+        transform.LookAt(pointAt.position + followHeightOffset, Vector3.up);
     }
 
-    private Vector3 SetPosition(Transform anchor, Vector3 targetPos)
+    private void SetPosition(Transform anchor, Vector3 targetPos)
     {
         Vector3 centerPosition = anchor.position; // Center position
         float distance = Vector3.Distance(targetPos, centerPosition); // Distance from anchor to position
@@ -28,6 +32,6 @@ public class ArrowPointer : MonoBehaviour
         fromOriginToObject *= followRadius / distance; //Multiply by radius, then Divide by distance
         position = centerPosition + fromOriginToObject; // Add new vector to anchor position
 
-        return position;
+        followPosition = position;
     }
 }

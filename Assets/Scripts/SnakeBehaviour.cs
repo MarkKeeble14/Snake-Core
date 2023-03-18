@@ -15,41 +15,46 @@ public class SnakeBehaviour : GridCellOccupant
     [SerializeField] private Vector2Int direction = Vector2Int.right;
     [SerializeField] private float timeBetweenMoves = .25f;
 
-    [Header("Attacks")]
+    [Header("Powerups")]
+    [Header("Ghosting")]
+    [SerializeField] private float ghostingOpacity;
 
+    [Header("Bombs")]
     [Header("Break Ahead")]
-    [SerializeField] private float minBreakAheadRange;
-    [SerializeField] private float maxBreakAheadRange;
+    [SerializeField] private float breakAheadRange;
     [SerializeField] private float gainBreakAheadRate;
-    [SerializeField] private float breakAheadCooldown;
-    private float breakAheadCooldownTimer;
-    [SerializeField] private FloatStore breakAheadCooldownPercent;
 
     [Header("Break Around")]
-    [SerializeField] private float minBreakAroundRange;
-    [SerializeField] private float maxBreakAroundRange;
+    [SerializeField] private float breakAroundRange;
     [SerializeField] private float gainBreakAroundRate;
-    [SerializeField] private float breakAroundCooldown;
-    private float breakAroundCooldownTimer;
-    [SerializeField] private FloatStore breakAroundCooldownPercent;
 
     [Header("References")]
     [SerializeField] private GridCellOccupant snakeTailPrefab;
     private LinkedList<GridCellOccupant> snakeSegments = new LinkedList<GridCellOccupant>();
+    private Material snakeMat;
 
-    [Header("UI")]
+    [Header("Scriptable Objects")]
     [SerializeField] private IntStore segmentsCounter;
-    [SerializeField] private IntStore allowedCollisions;
+    [SerializeField] private IntStore bombStore;
+    [SerializeField] private FloatStore isGhostedTimer;
 
+    // Tracking Variables
+    private bool hasLost;
     private Vector2Int lastDirectionMoved;
     private bool snakeEnabled;
     private bool moving;
     private float moveTimer;
 
-    private bool teleportFlag;
+    private GridCell teleportToCell;
 
-    private bool isPreppingPierce;
-    private bool isPreppingAoE;
+    private bool isGhosted;
+
+    // Swiping
+    Vector2 firstPressPos;
+    Vector2 secondPressPos;
+    Vector2 currentSwipe;
+
+    [SerializeField] private int foodBetweenCards;
 
     private void Start()
     {
@@ -58,14 +63,17 @@ public class SnakeBehaviour : GridCellOccupant
 
         // Reset values
         segmentsCounter.Reset();
-        allowedCollisions.Reset();
+        bombStore.Reset();
         moveTimer = timeBetweenMoves;
+
+        // Get a reference to the snakes renderer
+        snakeMat = GetComponent<Renderer>().material;
 
         // Add head to linked list
         snakeSegments.AddFirst(this);
     }
 
-    public void StartMoving(float delay)
+    public void StartMoving()
     {
         snakeEnabled = true;
     }
@@ -90,41 +98,53 @@ public class SnakeBehaviour : GridCellOccupant
         }
     }
 
-    private IEnumerator Movement(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-
-        snakeEnabled = true;
-    }
-
     // Update is called once per frame
     protected new void Update()
     {
+        if (hasLost) return;
+
         base.Update();
 
-        if (breakAheadCooldownTimer > 0)
+        // If the isGhostedTimer is greater than 0, the snake is ghosted
+        if (isGhostedTimer.Value > 0)
         {
-            breakAheadCooldownTimer -= Time.deltaTime;
+            isGhosted = true;
+            isGhostedTimer.Value -= Time.deltaTime;
+
+            // Change opacity if snake is ghosting
+            if (snakeMat.color.a != ghostingOpacity)
+            {
+                Color tmp = snakeMat.color;
+                tmp.a = ghostingOpacity;
+                snakeMat.color = tmp;
+            }
         }
         else
         {
-            breakAheadCooldownTimer = 0;
+            isGhosted = false;
+
+            // Change opacity if snake is ghosting
+            if (snakeMat.color.a == ghostingOpacity)
+            {
+                Color tmp = snakeMat.color;
+                tmp.a = 1;
+                snakeMat.color = tmp;
+            }
         }
-        if (breakAroundCooldownTimer > 0)
-        {
-            breakAroundCooldownTimer -= Time.deltaTime;
-        }
-        else
-        {
-            breakAroundCooldownTimer = 0;
-        }
-        breakAheadCooldownPercent.Value = breakAheadCooldownTimer / breakAheadCooldown;
-        breakAroundCooldownPercent.Value = breakAroundCooldownTimer / breakAroundCooldown;
 
         // Update forward
         transform.forward = new Vector3(direction.x, 0, direction.y);
 
-        // Track movement
+        // Change Directions
+        GameControls();
+        MobileControls();
+
+        if (!snakeEnabled)
+        {
+            return;
+        }
+
+        // Track movement / control when it happens
         if (moveTimer > 0)
         {
             moveTimer -= Time.deltaTime;
@@ -136,107 +156,43 @@ public class SnakeBehaviour : GridCellOccupant
             moveTimer = timeBetweenMoves;
         }
 
-        if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
-        {
-            if (lastDirectionMoved != Vector2Int.down)
-            {
-                direction = Vector2Int.up;
-                if (snakeEnabled && lastDirectionMoved != direction)
-                {
-                    moving = true;
-                    moveTimer = timeBetweenMoves;
-                }
-            }
-        }
-        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-            if (lastDirectionMoved != Vector2Int.right)
-            {
-                direction = Vector2Int.left;
-                if (snakeEnabled && lastDirectionMoved != direction)
-                {
-                    moving = true;
-                    moveTimer = timeBetweenMoves;
-                }
-            }
-        }
-        if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            if (lastDirectionMoved != Vector2Int.up)
-            {
-                direction = Vector2Int.down;
-                if (snakeEnabled && lastDirectionMoved != direction)
-                {
-                    moving = true;
-                    moveTimer = timeBetweenMoves;
-                }
-            }
-        }
-        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            if (lastDirectionMoved != Vector2Int.left)
-            {
-                direction = Vector2Int.right;
-                if (snakeEnabled && lastDirectionMoved != direction)
-                {
-                    moving = true;
-                    moveTimer = timeBetweenMoves;
-                }
-            }
-        }
-
-        if (!snakeEnabled)
-        {
-            return;
-        }
-
-        // Pierce Shoot (Temporary)
-        if (Input.GetKeyDown(KeyCode.Alpha1) && breakAheadCooldownTimer <= 0 && !isPreppingPierce && !isPreppingAoE)
-        {
-            StartCoroutine(BreakAhead());
-        }
-
-        // AoE (Temporary)
-        if (Input.GetKeyDown(KeyCode.Alpha2) && breakAroundCooldownTimer <= 0 && !isPreppingAoE && !isPreppingPierce)
-        {
-            StartCoroutine(BreakAround());
-        }
-
         if (!moving)
         {
             return;
         }
 
-        if (isPreppingPierce)
-            SetSelectedCellBreakAhead(setRange);
-        else if (isPreppingAoE)
-            SetSelectedCellBreakAround(setRange);
         Move();
     }
 
-    private List<GridCell> selectedCells = new List<GridCell>();
-    private int setRange;
+    private void ChangeDirection(Vector2Int disallowDirection, Vector2Int setDirection)
+    {
+        if (lastDirectionMoved != disallowDirection)
+        {
+            direction = setDirection;
+            if (snakeEnabled && lastDirectionMoved != direction)
+            {
+                moving = true;
+                moveTimer = 0;
+            }
+        }
+    }
 
     private IEnumerator BreakAhead()
     {
-        isPreppingPierce = true;
+        List<GridCell> selectedCells = new List<GridCell>();
+        GridCell startCell = currentCell;
+        int currentRange = 0;
 
-        float currentRange = minBreakAheadRange;
-        setRange = Mathf.FloorToInt(currentRange);
-
-        while (Input.GetKey(KeyCode.Alpha1))
+        while (currentRange < breakAheadRange)
         {
-            // 
-            if (currentRange <= maxBreakAheadRange)
-                currentRange += Time.deltaTime * gainBreakAheadRate;
-            else
-                currentRange = maxBreakAheadRange;
+            // increment current range
+            currentRange++;
+            selectedCells = SetSelectedCellBreakAhead(currentRange, startCell, selectedCells);
 
-            if (currentRange > setRange)
-            {
-                setRange = Mathf.FloorToInt(currentRange);
-                SetSelectedCellBreakAhead(setRange);
-            }
+            // Wait some time
+            yield return new WaitForSeconds(gainBreakAheadRate);
+
+            // redo
             yield return null;
         }
 
@@ -248,14 +204,9 @@ public class SnakeBehaviour : GridCellOccupant
             cell.BreakDestroyables();
             cell.SetSelected(false);
         }
-
-        setRange = 0;
-        isPreppingPierce = false;
-
-        breakAheadCooldownTimer = breakAheadCooldown;
     }
 
-    private void SetSelectedCellBreakAhead(int range)
+    private List<GridCell> SetSelectedCellBreakAhead(int range, GridCell origin, List<GridCell> selectedCells)
     {
         // Deselect previous cells
         foreach (GridCell cell in selectedCells)
@@ -271,7 +222,7 @@ public class SnakeBehaviour : GridCellOccupant
         {
             pathDirections.Add(direction);
         }
-        selectedCells = currentCell.GetPath(pathDirections, new List<GridCell>());
+        selectedCells = origin.GetPath(pathDirections, new List<GridCell>());
 
         // Select new cells
         foreach (GridCell cell in selectedCells)
@@ -280,28 +231,25 @@ public class SnakeBehaviour : GridCellOccupant
             if (!cell) continue;
             cell.SetSelected(true);
         }
+        return selectedCells;
     }
 
     private IEnumerator BreakAround()
     {
-        isPreppingAoE = true;
+        List<GridCell> selectedCells = new List<GridCell>();
+        GridCell startCell = currentCell;
+        int currentRange = 0;
 
-        float currentRange = minBreakAroundRange;
-        setRange = Mathf.FloorToInt(currentRange);
-
-        while (Input.GetKey(KeyCode.Alpha2))
+        while (currentRange < breakAroundRange)
         {
-            // 
-            if (currentRange <= maxBreakAroundRange)
-                currentRange += Time.deltaTime * gainBreakAroundRate;
-            else
-                currentRange = maxBreakAroundRange;
+            // increment current range
+            currentRange++;
+            selectedCells = SetSelectedCellBreakAround(currentRange, startCell, selectedCells);
 
-            if (currentRange > setRange)
-            {
-                setRange = Mathf.FloorToInt(currentRange);
-                SetSelectedCellBreakAround(setRange);
-            }
+            // Wait some time
+            yield return new WaitForSeconds(gainBreakAroundRate);
+
+            // redo
             yield return null;
         }
 
@@ -313,13 +261,9 @@ public class SnakeBehaviour : GridCellOccupant
             cell.BreakDestroyables();
             cell.SetSelected(false);
         }
-
-        setRange = 0;
-        isPreppingAoE = false;
-        breakAroundCooldownTimer = breakAroundCooldown;
     }
 
-    private void SetSelectedCellBreakAround(int range)
+    private List<GridCell> SetSelectedCellBreakAround(int range, GridCell origin, List<GridCell> selectedCells)
     {
         // Deselect previous cells
         foreach (GridCell cell in selectedCells)
@@ -329,7 +273,7 @@ public class SnakeBehaviour : GridCellOccupant
         }
 
         // Determine new cells to select
-        selectedCells = currentCell.GetNeighbours(false, true, Mathf.RoundToInt(range));
+        selectedCells = origin.GetNeighbours(false, true, Mathf.RoundToInt(range));
 
         // Select new cells
         foreach (GridCell cell in selectedCells)
@@ -338,38 +282,31 @@ public class SnakeBehaviour : GridCellOccupant
             if (!cell) continue;
             cell.SetSelected(true);
         }
+        return selectedCells;
     }
 
     private void Move()
     {
         GridCell nextCell;
-        if (teleportFlag)
+        if (teleportToCell)
         {
-            nextCell = GridGenerator._Instance.FindUnoccupiedCell();
-            teleportFlag = false;
+            nextCell = teleportToCell;
+            teleportToCell = null;
         }
         else
         {
             nextCell = currentCell.GetNeighbour(direction);
         }
 
-        // Restart scene if player loses
-        if (nextCell.IsBorderWall())
+        // Lose conditions
+        // hitting a nothing 
+        // hitting a border wall
+        // hitting an obstruction while not ghosted
+        if (!nextCell || nextCell.IsBorderWall() || (nextCell.IsOccupiedByObstruction() &&
+            !isGhosted))
         {
+            hasLost = true;
             UIManager._Instance.OpenLoseScreen();
-            snakeEnabled = false;
-        }
-        else if (nextCell.IsOccupiedByObstruction())
-        {
-            if (allowedCollisions.Value > 0)
-            {
-                allowedCollisions.Value--;
-            }
-            else
-            {
-                UIManager._Instance.OpenLoseScreen();
-                snakeEnabled = false;
-            }
         }
 
         lastDirectionMoved = direction;
@@ -380,6 +317,11 @@ public class SnakeBehaviour : GridCellOccupant
     {
         // Track number of segments
         segmentsCounter.Value++;
+        if (segmentsCounter.Value % foodBetweenCards == 0)
+        {
+            // New Card
+            UIManager._Instance.OpenSelectionScreen();
+        }
 
         // Add new segments
         GridCell spawnCell = snakeSegments.Last.Value.PreviousCell;
@@ -389,13 +331,95 @@ public class SnakeBehaviour : GridCellOccupant
         snakeSegments.AddLast(spawnedSegment);
     }
 
-    public void AddAllowedCollision(int amount)
+    public void Teleport(GridCell teleportToCell)
     {
-        allowedCollisions.Value += amount;
+        this.teleportToCell = teleportToCell;
     }
 
-    public void Teleport()
+    public void SetGhost(float duration)
     {
-        teleportFlag = true;
+        isGhostedTimer.Value = duration;
+    }
+
+    public void TryPlaceBomb()
+    {
+        if (bombStore.Value <= 0) return;
+        StartCoroutine(BreakAround());
+        bombStore.Value--;
+    }
+
+    private void GameControls()
+    {
+        // Up
+        if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            ChangeDirection(Vector2Int.down, Vector2Int.up);
+        }
+        // Left
+        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            ChangeDirection(Vector2Int.right, Vector2Int.left);
+        }
+        // Down
+        if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            ChangeDirection(Vector2Int.up, Vector2Int.down);
+        }
+        // Right
+        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            ChangeDirection(Vector2Int.left, Vector2Int.right);
+        }
+
+        // Place Bomb
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            TryPlaceBomb();
+        }
+    }
+
+    private void MobileControls()
+    {
+        if (Input.touches.Length > 0)
+        {
+            Touch t = Input.GetTouch(0);
+            if (t.phase == TouchPhase.Began)
+            {
+                //save began touch 2d point
+                firstPressPos = new Vector2(t.position.x, t.position.y);
+            }
+            if (t.phase == TouchPhase.Ended)
+            {
+                //save ended touch 2d point
+                secondPressPos = new Vector2(t.position.x, t.position.y);
+
+                //create vector from the two points
+                currentSwipe = new Vector3(secondPressPos.x - firstPressPos.x, secondPressPos.y - firstPressPos.y);
+
+                //normalize the 2d vector
+                currentSwipe.Normalize();
+
+                //swipe upwards
+                if (currentSwipe.y > 0 && currentSwipe.x > -0.5f && currentSwipe.x < 0.5f)
+                {
+                    ChangeDirection(Vector2Int.down, Vector2Int.up);
+                }
+                //swipe down
+                if (currentSwipe.y < 0 && currentSwipe.x > -0.5f && currentSwipe.x < 0.5f)
+                {
+                    ChangeDirection(Vector2Int.up, Vector2Int.down);
+                }
+                //swipe left
+                if (currentSwipe.x < 0 && currentSwipe.y > -0.5f && currentSwipe.y < 0.5f)
+                {
+                    ChangeDirection(Vector2Int.right, Vector2Int.left);
+                }
+                //swipe right
+                if (currentSwipe.x > 0 && currentSwipe.y > -0.5f && currentSwipe.y < 0.5f)
+                {
+                    ChangeDirection(Vector2Int.left, Vector2Int.right);
+                }
+            }
+        }
     }
 }

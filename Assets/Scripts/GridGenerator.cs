@@ -19,22 +19,19 @@ public class GridGenerator : MonoBehaviour
     [SerializeField] private float wallPerlinNoiseScale = 3f;
     [SerializeField] private float coinSamplePerlinMinimumValue = .55f;
     [SerializeField] private float coinPerlinNoiseScale = 5f;
+    [SerializeField] private float worldCellPerlinMinimumValue = .1f;
+    [SerializeField] private float worldCellNoiseScale = 10f;
+    [SerializeField] private float wallHeightScale = 2f;
     [SerializeField] private int numRows;
     [SerializeField] private int numColumns;
     [SerializeField] private int safeAreaRows = 3;
     [SerializeField] private int safeAreaColumns = 3;
     private Vector2 perlinRandomOffset;
 
-    [Header("Regeneration")]
-    [SerializeField] private int increaseRowsUponRegenerate = 5;
-    [SerializeField] private int increaseColumnsUponRegenerate = 5;
-    [SerializeField] private int increaseFoodUponRegenerate = 1;
-    [SerializeField] private int increaseObstaclesUponRegenerate = 1;
-    [SerializeField] private int increasePowerupsUponRegenerate = 1;
-
     [Header("Powerups")]
     [SerializeField] private int numFoodSpawned = 2;
     [SerializeField] private int numCoinsSpawned = 3;
+    [SerializeField] private int numBombsSpawned = 3;
     [SerializeField] private int numPowerupsSpawned = 1;
     [SerializeField] private int numObstaclesSpawned = 1;
 
@@ -46,23 +43,30 @@ public class GridGenerator : MonoBehaviour
     [SerializeField] private GridCellOccupant wallPrefab;
     [SerializeField] private GridCellOccupant foodPrefab;
     [SerializeField] private GridCellOccupant coinPrefab;
+    [SerializeField] private GridCellOccupant bombPrefab;
+
+    [SerializeField] private GridCellOccupant teleporterEntrancePrefab;
+    [SerializeField] private GridCellOccupant teleporterExitPrefab;
+
     [SerializeField] private GridCellOccupant[] powerupPrefabs;
     [SerializeField] private GridCellOccupant[] obstaclePrefabs;
     [SerializeField] private ArrowPointer arrowPointer;
 
+    [Header("Game Related")]
+    [SerializeField] private float snakeStartDelay = 2.5f;
+
     [Header("Time")]
     [SerializeField] private float alterTimeScaleSpeed = 1f;
-    [SerializeField] private TextMeshProUGUI slowDownTimeScaleText;
-    private float slowDownTimeTimer;
+    [SerializeField] private FloatStore alterTimeTimer;
     private float targetTimeScale;
-    private bool paused;
-    public bool IsPaused => paused;
 
     [Header("Double Events")]
-    [SerializeField] private TextMeshProUGUI doubleEventsText;
-    private float doubleEventTriggersTimer;
+    [SerializeField] private FloatStore doubleEventTriggersTimer;
     private int eventTriggerRepeats = 1;
     public int EventTriggerRepeats => eventTriggerRepeats;
+
+    private bool paused;
+    public bool IsPaused => paused;
 
     [Header("References")]
     [SerializeField] private IntStore coins;
@@ -71,8 +75,6 @@ public class GridGenerator : MonoBehaviour
 
     private List<ArrowPointer> spawnedFoodPointers = new List<ArrowPointer>();
     private string cardAlterationsResourcePath = "CardAlterations/";
-
-    private bool regenerating;
 
     private List<Wall> spawnedOres = new List<Wall>();
 
@@ -90,7 +92,7 @@ public class GridGenerator : MonoBehaviour
         Generate();
 
         // Spawn snake
-        spawnedSnake = (SnakeBehaviour)GridCells[numRows / 2, numColumns / 2].SpawnOccupant(snakePrefab);
+        spawnedSnake = (SnakeBehaviour)(FindUnoccupiedCell()).SpawnOccupant(snakePrefab);
         vCam.m_Follow = spawnedSnake.transform;
 
         for (int i = 0; i < numFoodSpawned; i++)
@@ -103,6 +105,11 @@ public class GridGenerator : MonoBehaviour
             SpawnCoin();
         }
 
+        for (int i = 0; i < numBombsSpawned; i++)
+        {
+            SpawnBomb();
+        }
+
         for (int i = 0; i < numPowerupsSpawned; i++)
         {
             SpawnPowerup();
@@ -113,7 +120,35 @@ public class GridGenerator : MonoBehaviour
             SpawnObstacle();
         }
 
-        spawnedSnake.StartMoving(1f);
+        StartCoroutine(StartSnake());
+
+        // Set Time
+        targetTimeScale = 1;
+        Time.timeScale = 1;
+    }
+
+    private IEnumerator StartSnake()
+    {
+        yield return new WaitForSeconds(snakeStartDelay);
+        spawnedSnake.StartMoving();
+    }
+
+    private void Update()
+    {
+        if (paused) return;
+
+        ChangeTime();
+        ChangeDoubleEventTriggers();
+    }
+
+    [ContextMenu("Spawn Teleporter")]
+    public void SpawnTeleporter()
+    {
+        GridCell start = FindUnoccupiedCell();
+        Teleporter teleporterSpawned = (Teleporter)(start.SpawnOccupant(teleporterEntrancePrefab));
+        GridCell exit = FindUnoccupiedCell();
+        GridCellOccupant spawnedExit = exit.SpawnOccupant(teleporterExitPrefab);
+        teleporterSpawned.Link(exit, spawnedExit);
     }
 
     private void Generate()
@@ -123,6 +158,16 @@ public class GridGenerator : MonoBehaviour
 
         // Create array
         GridCells = new GridCell[numRows, numColumns];
+
+        // Sample Noise for Cells
+        float[,] celllNoiseMap = new float[numRows, numColumns];
+        for (int x = 0; x < numRows; x++)
+        {
+            for (int y = 0; y < numColumns; y++)
+            {
+                celllNoiseMap[x, y] = SamplePerlinNoise(x, y, worldCellNoiseScale);
+            }
+        }
 
         // Sample Noise for Walls
         float[,] wallNoiseMap = new float[numRows, numColumns];
@@ -153,6 +198,10 @@ public class GridGenerator : MonoBehaviour
         {
             for (int p = 0; p < numColumns; p++)
             {
+                // Don't spawn cell if not supposed to
+                if (celllNoiseMap[i, p] < worldCellPerlinMinimumValue) continue;
+
+                // Spawn cell
                 GridCell spawned = Instantiate(gridCellPrefab, new Vector3(i, 0, p), Quaternion.identity, transform);
                 spawned.name += "[" + i + ", " + p + "]";
                 GridCells[i, p] = spawned;
@@ -167,10 +216,11 @@ public class GridGenerator : MonoBehaviour
                 // Spawn Border Walls
                 if (i == 0 || i == numRows - 1 || p == 0 || p == numColumns - 1)
                 {
-                    GridCellOccupant occupant = spawned.SpawnOccupant(wallPrefab);
-                    occupant.transform.SetParent(transform, true);
-                    occupant.IsBorderWall = true;
-                    occupant.GetComponent<Renderer>().material.color = Color.red;
+                    Wall wall = (Wall)spawned.SpawnOccupant(wallPrefab);
+                    wall.transform.SetParent(transform, true);
+                    wall.transform.localScale = new Vector3(wall.transform.localScale.x, 1 * wallHeightScale, wall.transform.localScale.z);
+                    wall.IsBorderWall = true;
+                    wall.SetWallType(WallType.BORDER);
                     continue;
                 }
 
@@ -179,83 +229,25 @@ public class GridGenerator : MonoBehaviour
                 {
                     // Spawn wall
                     Wall wall = (Wall)spawned.SpawnOccupant(wallPrefab);
+                    wall.SetWallType(WallType.NORMAL);
+
                     // Add it as a child under the generator to reduce clutter
                     wall.transform.SetParent(transform, true);
 
                     // Set if wall should drop coin on break
                     if (coinNoiseMap[i, p] > coinSamplePerlinMinimumValue)
                     {
-                        wall.GetComponent<Renderer>().material.color = Color.yellow;
-                        spawnedOres.Add(wall);
+                        wall.SetWallType(WallType.VALUABLE);
                         wall.AddOnDestroyCallback(delegate
                         {
                             wall.CurrentCell.SpawnOccupant(coinPrefab);
                             spawnedOres.Remove(wall);
-
-                            // No more ore's, regenerate grid
-                            if (spawnedOres.Count == 0)
-                            {
-                                Regenerate();
-                            }
                         });
+                        spawnedOres.Add(wall);
                     }
                 }
             }
         }
-    }
-
-    private void Regenerate()
-    {
-        regenerating = true;
-        spawnedSnake.StopMoving();
-
-        while (spawnedFoodPointers.Count > 0)
-        {
-            Destroy(spawnedFoodPointers[0].gameObject);
-            spawnedFoodPointers.RemoveAt(0);
-        }
-
-        for (int i = 0; i < numRows; i++)
-        {
-            for (int p = 0; p < numColumns; p++)
-            {
-                GridCell cell = GridCells[i, p];
-                cell.Delete();
-            }
-        }
-
-        numFoodSpawned += increaseFoodUponRegenerate;
-        numPowerupsSpawned += increasePowerupsUponRegenerate;
-        numObstaclesSpawned += increaseObstaclesUponRegenerate;
-        numRows += increaseRowsUponRegenerate;
-        numColumns += increaseColumnsUponRegenerate;
-
-        Generate();
-        regenerating = false;
-
-        spawnedSnake.SetToCell(GridCells[numRows / 2, numColumns / 2]);
-
-        for (int i = 0; i < numFoodSpawned; i++)
-        {
-            SpawnFood();
-        }
-
-        for (int i = 0; i < numCoinsSpawned; i++)
-        {
-            SpawnCoin();
-        }
-
-        for (int i = 0; i < numPowerupsSpawned; i++)
-        {
-            SpawnPowerup();
-        }
-
-        for (int i = 0; i < numObstaclesSpawned; i++)
-        {
-            SpawnObstacle();
-        }
-
-        spawnedSnake.StartMoving(1f);
     }
 
     private float SamplePerlinNoise(int x, int y, float scale)
@@ -270,7 +262,8 @@ public class GridGenerator : MonoBehaviour
     public GridCell FindUnoccupiedCell()
     {
         GridCell selectedCell = GridCells[UnityEngine.Random.Range(1, numRows - 2), UnityEngine.Random.Range(1, numColumns - 2)];
-        if (selectedCell.IsOccupiedByObstruction())
+        if (!selectedCell
+            || selectedCell.IsOccupiedByObstruction())
         {
             return FindUnoccupiedCell();
         }
@@ -282,7 +275,6 @@ public class GridGenerator : MonoBehaviour
 
     public void SpawnFood()
     {
-        if (regenerating) return;
         GridCellOccupant food = FindUnoccupiedCell().SpawnOccupant(foodPrefab);
         ArrowPointer arrow = Instantiate(arrowPointer, spawnedSnake.transform.position, Quaternion.identity);
         arrow.SetPointAt(spawnedSnake.transform, food.transform);
@@ -297,7 +289,6 @@ public class GridGenerator : MonoBehaviour
 
     public void SpawnCoin()
     {
-        if (regenerating) return;
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(coinPrefab);
         occupant.AddOnDestroyCallback(delegate
         {
@@ -305,9 +296,17 @@ public class GridGenerator : MonoBehaviour
         });
     }
 
+    public void SpawnBomb()
+    {
+        GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(bombPrefab);
+        occupant.AddOnDestroyCallback(delegate
+        {
+            SpawnBomb();
+        });
+    }
+
     public void SpawnPowerup()
     {
-        if (regenerating) return;
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(powerupPrefabs[UnityEngine.Random.Range(0, powerupPrefabs.Length)]);
         occupant.AddOnDestroyCallback(delegate
         {
@@ -317,7 +316,6 @@ public class GridGenerator : MonoBehaviour
 
     public void SpawnObstacle()
     {
-        if (regenerating) return;
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(obstaclePrefabs[UnityEngine.Random.Range(0, obstaclePrefabs.Length)]);
         occupant.AddOnDestroyCallback(delegate
         {
@@ -328,23 +326,18 @@ public class GridGenerator : MonoBehaviour
     public void SlowTime(float changeTimeTo, float duration)
     {
         targetTimeScale = changeTimeTo;
-        slowDownTimeTimer += duration;
+        alterTimeTimer.Value += duration;
     }
 
     private void ChangeTime()
     {
-        if (slowDownTimeTimer > 0)
+        if (alterTimeTimer.Value > 0)
         {
-            slowDownTimeTimer -= Time.unscaledDeltaTime;
-
-            slowDownTimeScaleText.text = Math.Round(slowDownTimeTimer, 1).ToString();
-            slowDownTimeScaleText.gameObject.SetActive(true);
+            alterTimeTimer.Value -= Time.unscaledDeltaTime;
         }
         else
         {
             targetTimeScale = 1;
-
-            slowDownTimeScaleText.gameObject.SetActive(false);
         }
 
         Time.timeScale = Mathf.Lerp(Time.timeScale, targetTimeScale, Time.unscaledDeltaTime * alterTimeScaleSpeed);
@@ -354,24 +347,19 @@ public class GridGenerator : MonoBehaviour
     public void DoubleEventTriggers(float duration)
     {
         eventTriggerRepeats = 2;
-        doubleEventTriggersTimer += duration;
+        doubleEventTriggersTimer.Value += duration;
     }
 
     private void ChangeDoubleEventTriggers()
     {
-        if (doubleEventTriggersTimer > 0)
+        if (doubleEventTriggersTimer.Value > 0)
         {
-            doubleEventTriggersTimer -= Time.deltaTime;
-
-            doubleEventsText.text = "x" + eventTriggerRepeats + " Events: " + Math.Round(doubleEventTriggersTimer, 1).ToString();
-            doubleEventsText.gameObject.SetActive(true);
+            doubleEventTriggersTimer.Value -= Time.unscaledDeltaTime;
 
         }
         else
         {
             eventTriggerRepeats = 1;
-
-            doubleEventsText.gameObject.SetActive(false);
         }
     }
 
@@ -383,6 +371,7 @@ public class GridGenerator : MonoBehaviour
 
     public void Resume()
     {
+        Time.timeScale = 1;
         paused = false;
     }
 
@@ -394,12 +383,5 @@ public class GridGenerator : MonoBehaviour
         {
             store.Reset();
         }
-    }
-
-    private void Update()
-    {
-        if (paused) return;
-        ChangeTime();
-        ChangeDoubleEventTriggers();
     }
 }

@@ -11,14 +11,13 @@ public class UIManager : MonoBehaviour
         _Instance = this;
     }
 
-
     [SerializeField] private string segmentsKey = "Segments";
-    [SerializeField] private string coinsKey = "Coins";
+    [SerializeField] private string durationKey = "Duration";
 
     [SerializeField] private TextMeshProUGUI currentSegmentsText;
     [SerializeField] private TextMeshProUGUI highScoreSegmentsText;
-    [SerializeField] private TextMeshProUGUI currentCoinsText;
-    [SerializeField] private TextMeshProUGUI highScoreCoinsText;
+    [SerializeField] private TextMeshProUGUI currentDurationText;
+    [SerializeField] private TextMeshProUGUI highScoreDurationText;
 
     [SerializeField] private IntStore segments;
     [SerializeField] private IntStore coins;
@@ -30,10 +29,15 @@ public class UIManager : MonoBehaviour
     [Header("Selection Screen")]
     [SerializeField] private GameObject[] enableOnOpenSelectionScreen;
     [SerializeField] private GameObject[] disableOnOpenSelectionScreen;
-    [SerializeField] private SelectionCard[] selectionPrefabs;
+    [SerializeField] private PercentageMap<SelectionCard> selectionPrefabs = new PercentageMap<SelectionCard>();
     [SerializeField] private Transform selectionHolder;
     [SerializeField] private int numSelections;
     private List<SelectionCard> spawnedSelections = new List<SelectionCard>();
+    [SerializeField] private int rerollCost;
+    [SerializeField] private float rerollCostMultiplyBy;
+    [SerializeField] private TextMeshProUGUI rerollCostText;
+    [SerializeField] private SerializableDictionary<CardType, Color> cardTypeColorDictionary = new SerializableDictionary<CardType, Color>();
+    public SerializableDictionary<CardType, Color> CardTypeColorDictionary { get { return cardTypeColorDictionary; } }
 
     public void SetHighScore(string key, int score, string prefix, string suffix, TextMeshProUGUI reg, TextMeshProUGUI hs)
     {
@@ -64,13 +68,14 @@ public class UIManager : MonoBehaviour
     public void SetScores()
     {
         SetHighScore(segmentsKey, segments.Value, "Ate ", " Apple", currentSegmentsText, highScoreSegmentsText);
-        SetHighScore(coinsKey, coins.Value, "Aquired ", " Coin", currentCoinsText, highScoreCoinsText);
+        SetHighScore(durationKey, Mathf.RoundToInt(Time.timeSinceLevelLoad), "Lasted ", " Second", currentDurationText, highScoreDurationText);
     }
-
 
     public void OpenLoseScreen()
     {
+        // Set scores
         SetScores();
+
         foreach (GameObject obj in disableOnOpenLoseScreen)
         {
             obj.SetActive(false);
@@ -83,10 +88,28 @@ public class UIManager : MonoBehaviour
         GridGenerator._Instance.Pause();
     }
 
+    public void RerollSelections()
+    {
+        if (coins.Value < rerollCost) return;
+
+        // Reset Selections
+        ClearSelections();
+        SetSelections();
+
+        // Change Reroll Cost
+        rerollCost = Mathf.CeilToInt(rerollCost * rerollCostMultiplyBy);
+        rerollCostText.text = rerollCost.ToString();
+        coins.Value -= rerollCost;
+    }
+
     [ContextMenu("CloseSelectionScreen")]
     public void CloseSelectionScreen()
     {
         ClearSelections();
+
+        // Re-enable Snake
+        // Disable Snake
+        SnakeBehaviour._Instance.StartMoving();
 
         foreach (GameObject obj in disableOnOpenSelectionScreen)
         {
@@ -102,6 +125,12 @@ public class UIManager : MonoBehaviour
     [ContextMenu("OpenSelectionScreen")]
     public void OpenSelectionScreen()
     {
+        // Set Reroll cost text
+        rerollCostText.text = rerollCost.ToString();
+
+        // Disable Snake
+        SnakeBehaviour._Instance.StopMoving();
+
         SetSelections();
         foreach (GameObject obj in disableOnOpenSelectionScreen)
         {
@@ -127,7 +156,7 @@ public class UIManager : MonoBehaviour
     {
         for (int i = 0; i < numSelections; i++)
         {
-            SelectionCard spawned = Instantiate(selectionPrefabs[Random.Range(0, selectionPrefabs.Length)], selectionHolder);
+            SelectionCard spawned = Instantiate(selectionPrefabs.GetOption(), selectionHolder);
             spawnedSelections.Add(spawned);
             spawned.AddOnSelectAction(() => CloseSelectionScreen());
         }

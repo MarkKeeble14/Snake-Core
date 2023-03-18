@@ -7,6 +7,6 @@ public class AlterFloatStoreOnSelect : OnSelectCardAction
 
     public override void SetCard(SelectionCard card)
     {
-        card.Set(coins.Value > cost, label, detailsPrefix + changeBy + detailsSuffix, cost, () => store.Value += changeBy);
+        card.Set(label, detailsPrefix + changeBy + detailsSuffix, () => store.Value += changeBy);
     }
 }

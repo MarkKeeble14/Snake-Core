@@ -114,7 +114,7 @@ MonoBehaviour:
   currentCell: {fileID: 0}
   previousCell: {fileID: 0}
   lockToCell: 1
-  obstruction: 0
+  obstruction: 1
   destroyable: 0
   triggersEvents: 1
   hasEvents: 0
@@ -122,22 +122,17 @@ MonoBehaviour:
   breakOnEventsTriggered: 0
   direction: {x: 0, y: 1}
   timeBetweenMoves: 0.5
-  minBreakAheadRange: 1
-  maxBreakAheadRange: 4
-  gainBreakAheadRate: 1.5
-  breakAheadCooldown: 3
-  breakAheadCooldownPercent: {fileID: 11400000, guid: 65719199b52a9054084a37c24b692aed,
-    type: 2}
-  minBreakAroundRange: 1
-  maxBreakAroundRange: 3
-  gainBreakAroundRate: 1
-  breakAroundCooldown: 10
-  breakAroundCooldownPercent: {fileID: 11400000, guid: 203db90d390e2df45b9a900e50960000,
-    type: 2}
+  ghostingOpacity: 0.34
+  breakAheadRange: 5
+  gainBreakAheadRate: 0.25
+  breakAroundRange: 3
+  gainBreakAroundRate: 0.5
   snakeTailPrefab: {fileID: -1019941561551226478, guid: 2e19760ff7cf224418f0d9eefae56427,
     type: 3}
   segmentsCounter: {fileID: 11400000, guid: 57e6a6e4672947b4d96b5db88fd5d8ec, type: 2}
-  allowedCollisions: {fileID: 11400000, guid: 9a057d44a857c644b8fc900582a37f1a, type: 2}
+  bombStore: {fileID: 11400000, guid: f6bbbcda8e66d6d4ea78071d5a0b3645, type: 2}
+  isGhostedTimer: {fileID: 11400000, guid: 9147ac59d02cc3143bedbe3b5ede8d87, type: 2}
+  foodBetweenCards: 3
 --- !u!1001 &4513517726686786414
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -153,17 +148,17 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 02c4ceb71eac54b4e830ed4449cc34c8,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 02c4ceb71eac54b4e830ed4449cc34c8,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.75
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 02c4ceb71eac54b4e830ed4449cc34c8,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.75
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 02c4ceb71eac54b4e830ed4449cc34c8,
         type: 3}
@@ -173,12 +168,12 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 02c4ceb71eac54b4e830ed4449cc34c8,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.25
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 02c4ceb71eac54b4e830ed4449cc34c8,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.25
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 02c4ceb71eac54b4e830ed4449cc34c8,
         type: 3}
