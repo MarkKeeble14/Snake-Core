@@ -5,6 +5,6 @@ public class SpawnCoinTriggerEvent : TriggerEvent
 {
     public override void Activate()
     {
-        GridGenerator._Instance.SpawnCoin();
+        GridGenerator._Instance.SpawnCoin(1);
     }
 }

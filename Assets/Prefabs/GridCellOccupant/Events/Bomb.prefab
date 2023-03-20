@@ -133,7 +133,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8328c9fcf818394d837555ee0025880, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowDoubling: 1
+  eventData:
+    CanBeStored: 0
+    CanBeDoubled: 1
+  displayInfo:
+    Label: 
+    color: {r: 0, g: 0, b: 0, a: 0}
+    sprite: {fileID: 0}
   bombs: {fileID: 11400000, guid: f6bbbcda8e66d6d4ea78071d5a0b3645, type: 2}
   valueChange: {fileID: 11400000, guid: e779b5e33075ee14998491ff981551f0, type: 2}
 --- !u!1001 &3502702875017594083

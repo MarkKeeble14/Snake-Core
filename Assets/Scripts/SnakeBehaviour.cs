@@ -105,6 +105,18 @@ public class SnakeBehaviour : GridCellOccupant
 
         base.Update();
 
+        // Update forward
+        transform.forward = new Vector3(direction.x, 0, direction.y);
+
+        // Change Directions
+        GameControls();
+        MobileControls();
+
+        if (!snakeEnabled)
+        {
+            return;
+        }
+
         // If the isGhostedTimer is greater than 0, the snake is ghosted
         if (isGhostedTimer.Value > 0)
         {
@@ -130,18 +142,6 @@ public class SnakeBehaviour : GridCellOccupant
                 tmp.a = 1;
                 snakeMat.color = tmp;
             }
-        }
-
-        // Update forward
-        transform.forward = new Vector3(direction.x, 0, direction.y);
-
-        // Change Directions
-        GameControls();
-        MobileControls();
-
-        if (!snakeEnabled)
-        {
-            return;
         }
 
         // Track movement / control when it happens
@@ -317,11 +317,6 @@ public class SnakeBehaviour : GridCellOccupant
     {
         // Track number of segments
         segmentsCounter.Value++;
-        if (segmentsCounter.Value % foodBetweenCards == 0)
-        {
-            // New Card
-            UIManager._Instance.OpenSelectionScreen();
-        }
 
         // Add new segments
         GridCell spawnCell = snakeSegments.Last.Value.PreviousCell;

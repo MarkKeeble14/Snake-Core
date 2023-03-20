@@ -5,7 +5,6 @@ using TMPro;
 using UnityEngine;
 using Cinemachine;
 
-
 public class GridGenerator : MonoBehaviour
 {
     // Also serves as a game manager
@@ -78,6 +77,13 @@ public class GridGenerator : MonoBehaviour
 
     private List<Wall> spawnedOres = new List<Wall>();
 
+    [Header("Event Stack")]
+    [SerializeField] private IntStore maxStackSize;
+    private Stack<Action> eventStack = new Stack<Action>();
+    [SerializeField] private EventStackDisplay eventStackDisplay;
+    [SerializeField] private float delayBetweenEventStackTriggers = 1f;
+    private bool executingStack;
+
     private void Awake()
     {
         // Set instance
@@ -85,6 +91,7 @@ public class GridGenerator : MonoBehaviour
 
         // Reset Coins
         coins.Reset();
+        maxStackSize.Reset();
 
         // Reset Cards
         ResetCardAlterations();
@@ -95,30 +102,11 @@ public class GridGenerator : MonoBehaviour
         spawnedSnake = (SnakeBehaviour)(FindUnoccupiedCell()).SpawnOccupant(snakePrefab);
         vCam.m_Follow = spawnedSnake.transform;
 
-        for (int i = 0; i < numFoodSpawned; i++)
-        {
-            SpawnFood();
-        }
-
-        for (int i = 0; i < numCoinsSpawned; i++)
-        {
-            SpawnCoin();
-        }
-
-        for (int i = 0; i < numBombsSpawned; i++)
-        {
-            SpawnBomb();
-        }
-
-        for (int i = 0; i < numPowerupsSpawned; i++)
-        {
-            SpawnPowerup();
-        }
-
-        for (int i = 0; i < numObstaclesSpawned; i++)
-        {
-            SpawnObstacle();
-        }
+        SpawnFood(numFoodSpawned);
+        SpawnCoin(numCoinsSpawned);
+        SpawnBomb(numBombsSpawned);
+        SpawnPowerup(numPowerupsSpawned);
+        SpawnObstacle(numObstaclesSpawned);
 
         StartCoroutine(StartSnake());
 
@@ -139,16 +127,6 @@ public class GridGenerator : MonoBehaviour
 
         ChangeTime();
         ChangeDoubleEventTriggers();
-    }
-
-    [ContextMenu("Spawn Teleporter")]
-    public void SpawnTeleporter()
-    {
-        GridCell start = FindUnoccupiedCell();
-        Teleporter teleporterSpawned = (Teleporter)(start.SpawnOccupant(teleporterEntrancePrefab));
-        GridCell exit = FindUnoccupiedCell();
-        GridCellOccupant spawnedExit = exit.SpawnOccupant(teleporterExitPrefab);
-        teleporterSpawned.Link(exit, spawnedExit);
     }
 
     private void Generate()
@@ -273,7 +251,7 @@ public class GridGenerator : MonoBehaviour
         }
     }
 
-    public void SpawnFood()
+    public void SpawnFood(int num)
     {
         GridCellOccupant food = FindUnoccupiedCell().SpawnOccupant(foodPrefab);
         ArrowPointer arrow = Instantiate(arrowPointer, spawnedSnake.transform.position, Quaternion.identity);
@@ -283,44 +261,97 @@ public class GridGenerator : MonoBehaviour
         {
             spawnedFoodPointers.Remove(arrow);
             Destroy(arrow.gameObject);
-            SpawnFood();
+            SpawnFood(1);
         });
+
+        if (--num > 0)
+            SpawnTeleporter(num);
     }
 
-    public void SpawnCoin()
+    public void SpawnCoin(int num)
     {
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(coinPrefab);
         occupant.AddOnDestroyCallback(delegate
         {
-            SpawnCoin();
+            SpawnCoin(1);
         });
+
+        if (--num > 0)
+            SpawnCoin(num);
     }
 
-    public void SpawnBomb()
+    public void SpawnBomb(int num)
     {
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(bombPrefab);
         occupant.AddOnDestroyCallback(delegate
         {
-            SpawnBomb();
+            SpawnBomb(1);
         });
+
+        if (--num > 0)
+            SpawnBomb(num);
     }
 
-    public void SpawnPowerup()
+    public void SpawnPowerup(int num)
     {
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(powerupPrefabs[UnityEngine.Random.Range(0, powerupPrefabs.Length)]);
         occupant.AddOnDestroyCallback(delegate
         {
-            SpawnPowerup();
+            SpawnPowerup(1);
         });
+
+        if (--num > 0)
+            SpawnPowerup(num);
     }
 
-    public void SpawnObstacle()
+    public void SpawnObstacle(int num)
     {
         GridCellOccupant occupant = FindUnoccupiedCell().SpawnOccupant(obstaclePrefabs[UnityEngine.Random.Range(0, obstaclePrefabs.Length)]);
         occupant.AddOnDestroyCallback(delegate
         {
-            SpawnObstacle();
+            SpawnObstacle(1);
         });
+
+        if (--num > 0)
+            SpawnObstacle(num);
+    }
+
+    public void SpawnWall(WallType type, int num)
+    {
+        Wall wall = (Wall)FindUnoccupiedCell().SpawnOccupant(wallPrefab);
+        wall.transform.SetParent(transform, true);
+        wall.transform.localScale = new Vector3(wall.transform.localScale.x, 1 * wallHeightScale, wall.transform.localScale.z);
+        wall.SetWallType(type);
+        switch (type)
+        {
+            case WallType.BORDER:
+                wall.IsBorderWall = true;
+                break;
+            case WallType.VALUABLE:
+                wall.AddOnDestroyCallback(delegate
+                {
+                    wall.CurrentCell.SpawnOccupant(coinPrefab);
+                    spawnedOres.Remove(wall);
+                });
+                spawnedOres.Add(wall);
+                break;
+        }
+
+        if (--num > 0)
+            SpawnWall(type, num);
+    }
+
+    [ContextMenu("Spawn Teleporter")]
+    public void SpawnTeleporter(int num)
+    {
+        GridCell start = FindUnoccupiedCell();
+        Teleporter teleporterSpawned = (Teleporter)(start.SpawnOccupant(teleporterEntrancePrefab));
+        GridCell exit = FindUnoccupiedCell();
+        GridCellOccupant spawnedExit = exit.SpawnOccupant(teleporterExitPrefab);
+        teleporterSpawned.Link(exit, spawnedExit);
+
+        if (--num > 0)
+            SpawnTeleporter(num);
     }
 
     public void SlowTime(float changeTimeTo, float duration)
@@ -331,6 +362,7 @@ public class GridGenerator : MonoBehaviour
 
     private void ChangeTime()
     {
+        if (paused || executingStack) return;
         if (alterTimeTimer.Value > 0)
         {
             alterTimeTimer.Value -= Time.unscaledDeltaTime;
@@ -346,12 +378,13 @@ public class GridGenerator : MonoBehaviour
 
     public void DoubleEventTriggers(float duration)
     {
-        eventTriggerRepeats = 2;
+        eventTriggerRepeats += 1;
         doubleEventTriggersTimer.Value += duration;
     }
 
     private void ChangeDoubleEventTriggers()
     {
+        if (paused || executingStack) return;
         if (doubleEventTriggersTimer.Value > 0)
         {
             doubleEventTriggersTimer.Value -= Time.unscaledDeltaTime;
@@ -383,5 +416,46 @@ public class GridGenerator : MonoBehaviour
         {
             store.Reset();
         }
+    }
+
+    public void AddEventToStack(Action a, StoredTriggerEventDisplayInfo info)
+    {
+        // Add the action to the stack
+        eventStack.Push(a);
+
+        // Add the corresponding UI element
+        eventStackDisplay.Push(info);
+
+        // if over the stack limit, call all functions in the stack
+        if (eventStack.Count >= maxStackSize.Value)
+        {
+            StartCoroutine(ExecuteEventStack());
+        }
+    }
+
+    private IEnumerator ExecuteEventStack()
+    {
+        executingStack = true;
+        SnakeBehaviour._Instance.StopMoving();
+        Time.timeScale = 0;
+
+        // For all of the displayed events in the stack
+        while (eventStack.Count > 0)
+        {
+            // Pop topmost function
+            Action a = eventStack.Pop();
+
+            // Pop topmost display
+            eventStackDisplay.Pop();
+
+            // Call Function
+            a?.Invoke();
+
+            yield return new WaitForSecondsRealtime(delayBetweenEventStackTriggers);
+        }
+
+        Time.timeScale = 1;
+        executingStack = false;
+        SnakeBehaviour._Instance.StartMoving();
     }
 }

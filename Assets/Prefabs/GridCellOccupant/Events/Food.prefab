@@ -133,7 +133,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92bf154e6c20eaf44a5d4848d8eb797e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowDoubling: 1
+  eventData:
+    CanBeStored: 0
+    CanBeDoubled: 1
+  storedDisplayInfo:
+    Label: 
+    color: {r: 0, g: 0, b: 0, a: 0}
+    sprite: {fileID: 0}
 --- !u!1001 &6836441950109698429
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -133,7 +133,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a510124f91cbac54d9ebaa5b296ba88e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowDoubling: 1
+  eventData:
+    CanBeStored: 1
+    CanBeDoubled: 1
+  storedDisplayInfo:
+    Label: Ghost
+    Color: {r: 0, g: 0.90923214, b: 1, a: 1}
+    Sprite: {fileID: 21300000, guid: f7c5f1d7b74c382448987f579850d140, type: 3}
+    Repeat: 0
   duration: {fileID: 11400000, guid: 7a5387ec2f222264290f9747b6b94f3a, type: 2}
 --- !u!1001 &6074272469785509739
 PrefabInstance:

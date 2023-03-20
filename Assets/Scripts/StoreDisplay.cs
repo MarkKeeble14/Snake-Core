@@ -24,14 +24,7 @@ public abstract class StoreDisplay : MonoBehaviour
 
     private void Update()
     {
-        if (Enabled)
-        {
-            text.gameObject.SetActive(true);
-            text.text = prefix + storeValue + suffix;
-        }
-        else
-        {
-            text.gameObject.SetActive(false);
-        }
+        text.enabled = Enabled;
+        text.text = prefix + storeValue + suffix;
     }
 }

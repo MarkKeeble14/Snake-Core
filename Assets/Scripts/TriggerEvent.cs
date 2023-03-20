@@ -4,8 +4,10 @@ using UnityEngine;
 
 public abstract class TriggerEvent : MonoBehaviour
 {
-    [SerializeField] private bool allowDoubling = true;
-    public bool AllowDoubling => allowDoubling;
+    [SerializeField] private TriggerEventData eventData;
+    public TriggerEventData EventData => eventData;
+    [SerializeField] private StoredTriggerEventDisplayInfo storedDisplayInfo;
+    public StoredTriggerEventDisplayInfo StoredDisplayInfo => storedDisplayInfo;
     public abstract void Activate();
 }
 

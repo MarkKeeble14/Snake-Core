@@ -119,6 +119,7 @@ MonoBehaviour:
   destroyable: 0
   triggersEvents: 0
   hasEvents: 1
+  isSnake: 0
   breakOnEventsTriggered: 1
 --- !u!114 &-1058972488997034980
 MonoBehaviour:
@@ -132,9 +133,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30ef43b7bdfda16478d62f0add8e68f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowDoubling: 1
-  duration: 5
-  changeTimeTo: 2
+  eventData:
+    CanBeStored: 1
+    CanBeDoubled: 1
+  storedDisplayInfo:
+    Label: Slow Time
+    Color: {r: 1, g: 0, b: 0.010315895, a: 1}
+    Sprite: {fileID: 21300000, guid: f7c5f1d7b74c382448987f579850d140, type: 3}
+    Repeat: 0
   alterDuration: {fileID: 11400000, guid: d95dbd81d223b62458e3319b54d92da8, type: 2}
   alterTimeScale: {fileID: 11400000, guid: cb83c231af5e6b146aa799a789ad9342, type: 2}
 --- !u!1001 &5673885299455103194

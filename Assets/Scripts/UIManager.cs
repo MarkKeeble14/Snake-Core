@@ -39,6 +39,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private SerializableDictionary<CardType, Color> cardTypeColorDictionary = new SerializableDictionary<CardType, Color>();
     public SerializableDictionary<CardType, Color> CardTypeColorDictionary { get { return cardTypeColorDictionary; } }
 
+    [SerializeField] private CallNextSelectionOnBarFill barFill;
+
     public void SetHighScore(string key, int score, string prefix, string suffix, TextMeshProUGUI reg, TextMeshProUGUI hs)
     {
         string plurality = (score == 1 ? "" : "s");
@@ -97,9 +99,9 @@ public class UIManager : MonoBehaviour
         SetSelections();
 
         // Change Reroll Cost
+        coins.Value -= rerollCost;
         rerollCost = Mathf.CeilToInt(rerollCost * rerollCostMultiplyBy);
         rerollCostText.text = rerollCost.ToString();
-        coins.Value -= rerollCost;
     }
 
     [ContextMenu("CloseSelectionScreen")]
@@ -120,6 +122,8 @@ public class UIManager : MonoBehaviour
             obj.SetActive(false);
         }
         GridGenerator._Instance.Resume();
+
+        barFill.AddOnFullActions();
     }
 
     [ContextMenu("OpenSelectionScreen")]

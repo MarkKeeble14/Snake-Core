@@ -53,10 +53,39 @@ public class GridCellOccupant : MonoBehaviour
     {
         foreach (TriggerEvent triggerEvent in GetComponents<TriggerEvent>())
         {
-            for (int i = 0; i < GridGenerator._Instance.EventTriggerRepeats; i++)
+            TriggerEventData data = triggerEvent.EventData;
+
+            // Can be doubled
+            if (data.CanBeDoubled)
             {
-                triggerEvent.Activate();
-                if (!triggerEvent.AllowDoubling) break;
+                if (data.CanBeStored) // Can be doubled and stored
+                {
+                    GridGenerator._Instance.AddEventToStack(delegate
+                    {
+                        for (int i = 0; i < GridGenerator._Instance.EventTriggerRepeats; i++)
+                        {
+                            triggerEvent.Activate();
+                        }
+                    }, triggerEvent.StoredDisplayInfo);
+                }
+                else // Can be doubled but not stored
+                {
+                    for (int i = 0; i < GridGenerator._Instance.EventTriggerRepeats; i++)
+                    {
+                        triggerEvent.Activate();
+                    }
+                }
+            }
+            else // Can't be Doubled
+            {
+                if (data.CanBeStored) // Can't be doubled but stored
+                {
+                    GridGenerator._Instance.AddEventToStack(() => triggerEvent.Activate(), triggerEvent.StoredDisplayInfo);
+                }
+                else // Can't be doubled and can't be stored
+                {
+                    triggerEvent.Activate();
+                }
             }
         }
         if (breakOnEventsTriggered)

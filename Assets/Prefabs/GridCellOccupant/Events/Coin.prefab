@@ -119,6 +119,7 @@ MonoBehaviour:
   destroyable: 0
   triggersEvents: 0
   hasEvents: 1
+  isSnake: 0
   breakOnEventsTriggered: 1
 --- !u!114 &-3623101262228407125
 MonoBehaviour:
@@ -132,7 +133,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90aa05d96e30ebc4fb7c719adb15abd6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowDoubling: 1
+  eventData:
+    CanBeStored: 0
+    CanBeDoubled: 1
+  storedDisplayInfo:
+    Label: 
+    color: {r: 0, g: 0, b: 0, a: 0}
+    sprite: {fileID: 0}
   coinStore: {fileID: 11400000, guid: 7c9d4758c50694c458929e2be73cd136, type: 2}
   valueChange: {fileID: 11400000, guid: 45a0043cf3549564c93f711d8bd2d01f, type: 2}
 --- !u!1001 &3502702875017594083
