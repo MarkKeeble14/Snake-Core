@@ -14,17 +14,24 @@ public class GridGenerator : MonoBehaviour
 
     [Header("Settings")]
     [Header("Generation")]
-    [SerializeField] private float wallSamplePerlinMinimumValue = .45f;
-    [SerializeField] private float wallPerlinNoiseScale = 3f;
-    [SerializeField] private float coinSamplePerlinMinimumValue = .55f;
-    [SerializeField] private float coinPerlinNoiseScale = 5f;
-    [SerializeField] private float worldCellPerlinMinimumValue = .1f;
-    [SerializeField] private float worldCellNoiseScale = 10f;
-    [SerializeField] private float wallHeightScale = 2f;
     [SerializeField] private int numRows;
     [SerializeField] private int numColumns;
-    [SerializeField] private int safeAreaRows = 3;
-    [SerializeField] private int safeAreaColumns = 3;
+    // [SerializeField] private int safeAreaRows = 3;
+    // [SerializeField] private int safeAreaColumns = 3;
+
+    [Header("Wall Settings")]
+    [SerializeField] private float wallSamplePerlinMinimumValue = .45f;
+    [SerializeField] private float wallPerlinNoiseScale = 3f;
+    [SerializeField] private Vector2 minMaxBorderWallHeightScale = new Vector2(3f, 5f);
+    [SerializeField] private Vector2 minMaxNormalWallHeightScale = new Vector2(1f, 3f);
+
+    [Header("Valuable Wall Settings")]
+    [SerializeField] private float coinSamplePerlinMinimumValue = .55f;
+    [SerializeField] private float coinPerlinNoiseScale = 5f;
+
+    [Header("World Cell Settings")]
+    [SerializeField] private float worldCellPerlinMinimumValue = .1f;
+    [SerializeField] private float worldCellNoiseScale = 10f;
     private Vector2 perlinRandomOffset;
 
     [Header("Powerups")]
@@ -51,19 +58,16 @@ public class GridGenerator : MonoBehaviour
     [SerializeField] private GridCellOccupant[] obstaclePrefabs;
     [SerializeField] private ArrowPointer arrowPointer;
 
-    [Header("Game Related")]
-    [SerializeField] private float snakeStartDelay = 2.5f;
-
     [Header("Time")]
-    [SerializeField] private float alterTimeScaleSpeed = 1f;
     [SerializeField] private FloatStore alterTimeTimer;
-    private float targetTimeScale;
 
     [Header("Double Events")]
     [SerializeField] private FloatStore doubleEventTriggersTimer;
     private int eventTriggerRepeats = 1;
     public int EventTriggerRepeats => eventTriggerRepeats;
 
+    [Header("Pausing")]
+    private float timeBeforePause;
     private bool paused;
     public bool IsPaused => paused;
 
@@ -82,6 +86,8 @@ public class GridGenerator : MonoBehaviour
     private Stack<Action> eventStack = new Stack<Action>();
     [SerializeField] private EventStackDisplay eventStackDisplay;
     [SerializeField] private float delayBetweenEventStackTriggers = 1f;
+    [SerializeField] private float delayAfterEventStackTriggers = 1f;
+    [SerializeField] private IntStore popIn;
     private bool executingStack;
 
     private void Awake()
@@ -92,6 +98,7 @@ public class GridGenerator : MonoBehaviour
         // Reset Coins
         coins.Reset();
         maxStackSize.Reset();
+        popIn.Value = maxStackSize.Value;
 
         // Reset Cards
         ResetCardAlterations();
@@ -108,17 +115,8 @@ public class GridGenerator : MonoBehaviour
         SpawnPowerup(numPowerupsSpawned);
         SpawnObstacle(numObstaclesSpawned);
 
-        StartCoroutine(StartSnake());
-
         // Set Time
-        targetTimeScale = 1;
         Time.timeScale = 1;
-    }
-
-    private IEnumerator StartSnake()
-    {
-        yield return new WaitForSeconds(snakeStartDelay);
-        spawnedSnake.StartMoving();
     }
 
     private void Update()
@@ -127,6 +125,17 @@ public class GridGenerator : MonoBehaviour
 
         ChangeTime();
         ChangeDoubleEventTriggers();
+    }
+
+    public void StartGame(float wait)
+    {
+        StartCoroutine(StartSnake(wait));
+    }
+
+    private IEnumerator StartSnake(float wait)
+    {
+        yield return new WaitForSeconds(wait);
+        SnakeBehaviour._Instance.StartMoving();
     }
 
     private void Generate()
@@ -168,8 +177,8 @@ public class GridGenerator : MonoBehaviour
         }
 
         // Spawning safe area
-        Vector2 safeAreaXBounds = new Vector2((numRows / 2) - (safeAreaRows / 2), (numRows / 2) + (safeAreaRows / 2));
-        Vector2 safeAreaYBounds = new Vector2((numColumns / 2) - (safeAreaColumns / 2), (numColumns / 2) + (safeAreaColumns / 2));
+        // Vector2 safeAreaXBounds = new Vector2((numRows / 2) - (safeAreaRows / 2), (numRows / 2) + (safeAreaRows / 2));
+        // Vector2 safeAreaYBounds = new Vector2((numColumns / 2) - (safeAreaColumns / 2), (numColumns / 2) + (safeAreaColumns / 2));
 
         // Spawn cells
         for (int i = 0; i < numRows; i++)
@@ -186,17 +195,17 @@ public class GridGenerator : MonoBehaviour
                 spawned.Set(i, p);
 
                 // inside of safe area
-                if (i > safeAreaXBounds.x && i < safeAreaXBounds.y && p > safeAreaYBounds.x && p < safeAreaYBounds.y)
-                {
-                    continue;
-                }
+                // if (i > safeAreaXBounds.x && i < safeAreaXBounds.y && p > safeAreaYBounds.x && p < safeAreaYBounds.y)
+                // {
+                //    continue;
+                // }
 
                 // Spawn Border Walls
                 if (i == 0 || i == numRows - 1 || p == 0 || p == numColumns - 1)
                 {
                     Wall wall = (Wall)spawned.SpawnOccupant(wallPrefab);
                     wall.transform.SetParent(transform, true);
-                    wall.transform.localScale = new Vector3(wall.transform.localScale.x, 1 * wallHeightScale, wall.transform.localScale.z);
+                    wall.transform.localScale = new Vector3(wall.transform.localScale.x, 1 * RandomHelper.RandomFloat(minMaxBorderWallHeightScale), wall.transform.localScale.z);
                     wall.IsBorderWall = true;
                     wall.SetWallType(WallType.BORDER);
                     continue;
@@ -207,6 +216,7 @@ public class GridGenerator : MonoBehaviour
                 {
                     // Spawn wall
                     Wall wall = (Wall)spawned.SpawnOccupant(wallPrefab);
+                    wall.transform.localScale = new Vector3(wall.transform.localScale.x, 1 * RandomHelper.RandomFloat(minMaxNormalWallHeightScale), wall.transform.localScale.z);
                     wall.SetWallType(WallType.NORMAL);
 
                     // Add it as a child under the generator to reduce clutter
@@ -320,12 +330,15 @@ public class GridGenerator : MonoBehaviour
     {
         Wall wall = (Wall)FindUnoccupiedCell().SpawnOccupant(wallPrefab);
         wall.transform.SetParent(transform, true);
-        wall.transform.localScale = new Vector3(wall.transform.localScale.x, 1 * wallHeightScale, wall.transform.localScale.z);
         wall.SetWallType(type);
         switch (type)
         {
+            case WallType.NORMAL:
+                wall.transform.localScale = new Vector3(wall.transform.localScale.x, 1 * RandomHelper.RandomFloat(minMaxNormalWallHeightScale), wall.transform.localScale.z);
+                break;
             case WallType.BORDER:
                 wall.IsBorderWall = true;
+                wall.transform.localScale = new Vector3(wall.transform.localScale.x, 1 * RandomHelper.RandomFloat(minMaxBorderWallHeightScale), wall.transform.localScale.z);
                 break;
             case WallType.VALUABLE:
                 wall.AddOnDestroyCallback(delegate
@@ -356,7 +369,7 @@ public class GridGenerator : MonoBehaviour
 
     public void SlowTime(float changeTimeTo, float duration)
     {
-        targetTimeScale = changeTimeTo;
+        Time.timeScale = changeTimeTo;
         alterTimeTimer.Value += duration;
     }
 
@@ -369,10 +382,8 @@ public class GridGenerator : MonoBehaviour
         }
         else
         {
-            targetTimeScale = 1;
+            Time.timeScale = 1;
         }
-
-        Time.timeScale = Mathf.Lerp(Time.timeScale, targetTimeScale, Time.unscaledDeltaTime * alterTimeScaleSpeed);
     }
 
 
@@ -398,13 +409,15 @@ public class GridGenerator : MonoBehaviour
 
     public void Pause()
     {
+        timeBeforePause = Time.timeScale;
         Time.timeScale = 0;
         paused = true;
     }
 
     public void Resume()
     {
-        Time.timeScale = 1;
+        Time.timeScale = timeBeforePause;
+        timeBeforePause = 1;
         paused = false;
     }
 
@@ -426,6 +439,8 @@ public class GridGenerator : MonoBehaviour
         // Add the corresponding UI element
         eventStackDisplay.Push(info);
 
+        popIn.Value--;
+
         // if over the stack limit, call all functions in the stack
         if (eventStack.Count >= maxStackSize.Value)
         {
@@ -442,6 +457,8 @@ public class GridGenerator : MonoBehaviour
         // For all of the displayed events in the stack
         while (eventStack.Count > 0)
         {
+            yield return new WaitForSecondsRealtime(delayBetweenEventStackTriggers);
+
             // Pop topmost function
             Action a = eventStack.Pop();
 
@@ -450,12 +467,17 @@ public class GridGenerator : MonoBehaviour
 
             // Call Function
             a?.Invoke();
-
-            yield return new WaitForSecondsRealtime(delayBetweenEventStackTriggers);
         }
 
-        Time.timeScale = 1;
+        yield return new WaitForSecondsRealtime(delayAfterEventStackTriggers);
+
+        // Reset time scale but only if no other events have changed it
+        if (Time.timeScale == 0)
+            Time.timeScale = 1;
+
         executingStack = false;
         SnakeBehaviour._Instance.StartMoving();
+
+        popIn.Value = maxStackSize.Value;
     }
 }

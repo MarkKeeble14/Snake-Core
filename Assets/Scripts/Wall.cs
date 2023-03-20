@@ -1,13 +1,6 @@
 ﻿using System;
 using UnityEngine;
 
-public enum WallType
-{
-    VALUABLE,
-    NORMAL,
-    BORDER
-}
-
 public class Wall : GridCellOccupant
 {
     [Header("Wall Settings")]

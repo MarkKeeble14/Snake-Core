@@ -66,7 +66,7 @@ public class SpawnCellOccupantsOnSelect : OnSelectCardAction
 
     private string GetSpawnsInfo()
     {
-        string s = "Possible Spawns:\n";
+        string s = "";
         List<GridCellOccupantType> spawnKeys = spawns.Keys();
         for (int i = 0; i < spawnKeys.Count; i++)
         {
@@ -76,15 +76,15 @@ public class SpawnCellOccupantsOnSelect : OnSelectCardAction
             {
                 case SpawnOddsType.CHANCE_TO:
                     if (spawnOdds.chances.x == spawnOdds.chances.y)
-                        s += "Spawn: " + type;
+                        s += "Spawn " + GetOccupantString(type);
                     else
-                        s += spawnOdds.chances.x + " / " + spawnOdds.chances.y + " Chance to Spawn " + type;
+                        s += spawnOdds.chances.x + " / " + spawnOdds.chances.y + " Chance to Spawn " + GetOccupantString(type);
                     break;
                 case SpawnOddsType.NUM_BETWEEN:
                     if (spawnOdds.chances.x == spawnOdds.chances.y)
-                        s += "Spawn " + spawnOdds.chances.x + " " + type + (spawnOdds.chances.x > 1 ? "s" : "");
+                        s += "Spawn " + spawnOdds.chances.x + " " + GetOccupantString(type) + (spawnOdds.chances.x > 1 ? "s" : "");
                     else
-                        s += "Spawn Between: " + spawnOdds.chances.x + " - " + spawnOdds.chances.y + " " + type + "s";
+                        s += "Spawn Between " + spawnOdds.chances.x + " - " + spawnOdds.chances.y + " " + GetOccupantString(type) + "s";
                     break;
             }
 
@@ -92,5 +92,32 @@ public class SpawnCellOccupantsOnSelect : OnSelectCardAction
                 s += "\n";
         }
         return s;
+    }
+
+    public static string GetOccupantString(GridCellOccupantType type)
+    {
+        switch (type)
+        {
+            case GridCellOccupantType.BOMB:
+                return "Bomb";
+            case GridCellOccupantType.COIN:
+                return "Coin";
+            case GridCellOccupantType.FOOD:
+                return "Food";
+            case GridCellOccupantType.TELEPORTER:
+                return "Teleporter";
+            case GridCellOccupantType.BORDER_WALL:
+                return "Death Wall";
+            case GridCellOccupantType.OBSTACLE:
+                return "Obstacle";
+            case GridCellOccupantType.POWERUP:
+                return "Powerup";
+            case GridCellOccupantType.WALL:
+                return "Wall";
+            case GridCellOccupantType.VALUABLE_WALL:
+                return "Valuable Wall";
+            default:
+                throw new UnhandledSwitchCaseException();
+        }
     }
 }

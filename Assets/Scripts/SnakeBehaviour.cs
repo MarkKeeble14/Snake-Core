@@ -121,7 +121,7 @@ public class SnakeBehaviour : GridCellOccupant
         if (isGhostedTimer.Value > 0)
         {
             isGhosted = true;
-            isGhostedTimer.Value -= Time.deltaTime;
+            isGhostedTimer.Value -= Time.unscaledDeltaTime;
 
             // Change opacity if snake is ghosting
             if (snakeMat.color.a != ghostingOpacity)
@@ -333,7 +333,7 @@ public class SnakeBehaviour : GridCellOccupant
 
     public void SetGhost(float duration)
     {
-        isGhostedTimer.Value = duration;
+        isGhostedTimer.Value += duration;
     }
 
     public void TryPlaceBomb()

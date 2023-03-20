@@ -14,10 +14,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private string segmentsKey = "Segments";
     [SerializeField] private string durationKey = "Duration";
 
-    [SerializeField] private TextMeshProUGUI currentSegmentsText;
-    [SerializeField] private TextMeshProUGUI highScoreSegmentsText;
-    [SerializeField] private TextMeshProUGUI currentDurationText;
-    [SerializeField] private TextMeshProUGUI highScoreDurationText;
+    [SerializeField] private TextMeshProUGUI currentScoreText;
+    [SerializeField] private TextMeshProUGUI highScoreText;
 
     [SerializeField] private IntStore segments;
     [SerializeField] private IntStore coins;
@@ -41,36 +39,58 @@ public class UIManager : MonoBehaviour
 
     [SerializeField] private CallNextSelectionOnBarFill barFill;
 
-    public void SetHighScore(string key, int score, string prefix, string suffix, TextMeshProUGUI reg, TextMeshProUGUI hs)
-    {
-        string plurality = (score == 1 ? "" : "s");
-        reg.text = prefix + score.ToString() + suffix + plurality;
+    // if player has more segments, high score
+    // if player has same segments, less duration, high score
+    // if player has same segments, more duration, no high score
+    // if player has less segments, no high score
 
-        // Seconds Survived
-        if (PlayerPrefs.HasKey(key))
+    [ContextMenu("ClearHighScores")]
+    private void ClearHighScores()
+    {
+        PlayerPrefs.DeleteAll();
+    }
+
+    public void SetHighScore()
+    {
+        float duration = (float)System.Math.Round(Time.timeSinceLevelLoad, 1);
+        if (PlayerPrefs.HasKey(segmentsKey))
         {
-            float hsValue = PlayerPrefs.GetInt(key);
-            if (score > hsValue)
+            int hsSegments = PlayerPrefs.GetInt(segmentsKey);
+            float hsDuration = PlayerPrefs.GetFloat(durationKey);
+
+            currentScoreText.text = "Size = " + segments.Value + " | " + duration + "s";
+
+            // Saving High Score
+            if (segments.Value > hsSegments)
             {
-                PlayerPrefs.SetInt(key, score);
-                hs.text = "New High Score!: " + prefix + score.ToString() + suffix + plurality;
+                PlayerPrefs.SetInt(segmentsKey, segments.Value);
+                PlayerPrefs.SetFloat(durationKey, duration);
+                highScoreText.text = "New High Score!: " + currentScoreText.text;
+            }
+            else if (segments.Value == hsSegments && duration < hsDuration)
+            {
+                PlayerPrefs.SetInt(segmentsKey, segments.Value);
+                PlayerPrefs.SetFloat(durationKey, duration);
+                highScoreText.text = "New High Score!: " + currentScoreText.text;
             }
             else
             {
-                hs.text = "High Score: " + prefix + hsValue.ToString() + suffix + plurality;
+                highScoreText.text = "High Score: Size = " + hsSegments + " | " + hsDuration + "s";
             }
         }
         else
         {
-            PlayerPrefs.SetInt(key, score);
-            hs.text = "New High Score!: " + prefix + score.ToString() + suffix + plurality;
+            PlayerPrefs.SetInt(segmentsKey, segments.Value);
+            PlayerPrefs.SetFloat(durationKey, duration);
+
+            currentScoreText.text = "Size = " + segments.Value + " | " + duration + "s";
+            highScoreText.text = "New High Score!: " + currentScoreText.text;
         }
     }
 
     public void SetScores()
     {
-        SetHighScore(segmentsKey, segments.Value, "Ate ", " Apple", currentSegmentsText, highScoreSegmentsText);
-        SetHighScore(durationKey, Mathf.RoundToInt(Time.timeSinceLevelLoad), "Lasted ", " Second", currentDurationText, highScoreDurationText);
+        SetHighScore();
     }
 
     public void OpenLoseScreen()
