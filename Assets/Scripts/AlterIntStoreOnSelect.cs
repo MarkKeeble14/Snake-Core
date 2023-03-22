@@ -9,9 +9,7 @@ public class AlterIntStoreOnSelect : OnSelectCardAction
     {
         card.Set(label, detailsPrefix + changeBy + detailsSuffix, delegate
         {
-            Debug.Log("Alter Int Store: " + store.name + ": Pre-Alter: " + store.Value);
             store.Value += changeBy;
-            Debug.Log("Alter Int Store: " + store.name + ": Pre-Alter: " + store.Value);
         });
     }
 }

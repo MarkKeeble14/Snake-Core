@@ -9,9 +9,7 @@ public class AlterFloatStoreOnSelect : OnSelectCardAction
     {
         card.Set(label, detailsPrefix + changeBy + detailsSuffix, delegate
         {
-            Debug.Log("Alter Float Store: " + store.name + ": Pre-Alter: " + store.Value);
             store.Value += changeBy;
-            Debug.Log("Alter Float Store: " + store.name + ": Post-Alter: " + store.Value);
         });
     }
 }
