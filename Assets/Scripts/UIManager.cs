@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -38,6 +39,9 @@ public class UIManager : MonoBehaviour
     public SerializableDictionary<CardType, Color> CardTypeColorDictionary { get { return cardTypeColorDictionary; } }
 
     [SerializeField] private CallNextSelectionOnBarFill barFill;
+
+    [SerializeField] private float restartTime = 1f;
+    [SerializeField] private FloatStore restartTimer;
 
     // if player has more segments, high score
     // if player has same segments, less duration, high score
@@ -129,10 +133,6 @@ public class UIManager : MonoBehaviour
     {
         ClearSelections();
 
-        // Re-enable Snake
-        // Disable Snake
-        SnakeBehaviour._Instance.StartMoving();
-
         foreach (GameObject obj in disableOnOpenSelectionScreen)
         {
             obj.SetActive(true);
@@ -142,8 +142,36 @@ public class UIManager : MonoBehaviour
             obj.SetActive(false);
         }
         GridGenerator._Instance.Resume();
-
         barFill.AddOnFullActions();
+        StartCoroutine(StartSnake());
+    }
+
+    public IEnumerator StartSnake()
+    {
+        restartTimer.Value = restartTime;
+
+        while (restartTimer.Value > 0)
+        {
+            restartTimer.Value -= Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        // Re-enable Snake
+        SnakeBehaviour._Instance.StartMoving();
+    }
+
+    public IEnumerator StartSnake(float delay)
+    {
+        restartTimer.Value = delay;
+
+        while (restartTimer.Value > 0)
+        {
+            restartTimer.Value -= Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        // Re-enable Snake
+        SnakeBehaviour._Instance.StartMoving();
     }
 
     [ContextMenu("OpenSelectionScreen")]

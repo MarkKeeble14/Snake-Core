@@ -7,6 +7,11 @@ public class AlterIntStoreOnSelect : OnSelectCardAction
 
     public override void SetCard(SelectionCard card)
     {
-        card.Set(label, detailsPrefix + changeBy + detailsSuffix, () => store.Value += changeBy);
+        card.Set(label, detailsPrefix + changeBy + detailsSuffix, delegate
+        {
+            Debug.Log("Alter Int Store: " + store.name + ": Pre-Alter: " + store.Value);
+            store.Value += changeBy;
+            Debug.Log("Alter Int Store: " + store.name + ": Pre-Alter: " + store.Value);
+        });
     }
 }

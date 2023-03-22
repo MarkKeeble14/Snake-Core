@@ -333,7 +333,7 @@ GameObject:
   - component: {fileID: -4577328464161507671}
   - component: {fileID: 6862730175740441793}
   m_Layer: 5
-  m_Name: SpawnBombMany
+  m_Name: SpawnBorderWallFew
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -452,7 +452,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   label: {fileID: 3840497782051982719}
   details: {fileID: 3840497783852559839}
-  type: 2
+  type: 1
 --- !u!225 &-4577328464161507671
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -482,7 +482,7 @@ MonoBehaviour:
   detailsSuffix: 
   spawns:
     dictionary:
-    - key: 5
+    - key: 2
       value:
         type: 1
         chances: {x: 2, y: 4}

@@ -452,7 +452,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   label: {fileID: 3840497782051982719}
   details: {fileID: 3840497783852559839}
-  type: 0
+  type: 2
 --- !u!114 &3997072912080501268
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -466,8 +466,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   label: Change Value
-  detailsPrefix: 'Time is Increased for '
-  detailsSuffix: s More Time
+  detailsPrefix: 'The Duration of Time Speed Up is Increased by  '
+  detailsSuffix: s
   changeBy: 0.5
   store: {fileID: 11400000, guid: d95dbd81d223b62458e3319b54d92da8, type: 2}
 --- !u!225 &154126609546538657

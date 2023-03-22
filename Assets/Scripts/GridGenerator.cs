@@ -70,20 +70,18 @@ public class GridGenerator : MonoBehaviour
     private float timeBeforePause;
     private bool paused;
     public bool IsPaused => paused;
+    private float targetTimeScale;
 
     [Header("References")]
-    [SerializeField] private IntStore coins;
-
     [SerializeField] private CinemachineVirtualCamera vCam;
 
     private List<ArrowPointer> spawnedFoodPointers = new List<ArrowPointer>();
-    private string cardAlterationsResourcePath = "CardAlterations/";
 
     private List<Wall> spawnedOres = new List<Wall>();
 
     [Header("Event Stack")]
     [SerializeField] private IntStore maxStackSize;
-    private Stack<Action> eventStack = new Stack<Action>();
+    private Queue<Action> eventStack = new Queue<Action>();
     [SerializeField] private EventStackDisplay eventStackDisplay;
     [SerializeField] private float delayBetweenEventStackTriggers = 1f;
     [SerializeField] private float delayAfterEventStackTriggers = 1f;
@@ -95,13 +93,15 @@ public class GridGenerator : MonoBehaviour
         // Set instance
         _Instance = this;
 
-        // Reset Coins
-        coins.Reset();
-        maxStackSize.Reset();
-        popIn.Value = maxStackSize.Value;
+        // Reset Stats
+        NumStore[] stats = Resources.LoadAll<NumStore>("NumStores");
+        foreach (NumStore store in stats)
+        {
+            store.Reset();
+        }
 
-        // Reset Cards
-        ResetCardAlterations();
+        // Reset Coins
+        popIn.Value = maxStackSize.Value;
 
         Generate();
 
@@ -127,15 +127,9 @@ public class GridGenerator : MonoBehaviour
         ChangeDoubleEventTriggers();
     }
 
-    public void StartGame(float wait)
+    public void StartGame(float delay)
     {
-        StartCoroutine(StartSnake(wait));
-    }
-
-    private IEnumerator StartSnake(float wait)
-    {
-        yield return new WaitForSeconds(wait);
-        SnakeBehaviour._Instance.StartMoving();
+        StartCoroutine(UIManager._Instance.StartSnake(delay));
     }
 
     private void Generate()
@@ -243,7 +237,6 @@ public class GridGenerator : MonoBehaviour
         float xCoord = (x + perlinRandomOffset.x) / numRows * scale;
         float yCoord = (y + perlinRandomOffset.y) / numColumns * scale;
         float noiseValue = Mathf.PerlinNoise(xCoord, yCoord);
-        // Debug.Log("x: " + x + ", xCoord: " + xCoord + ", y: " + y + ", yCoord: " + yCoord + ", noiseValue: " + noiseValue);
         return noiseValue;
     }
 
@@ -251,7 +244,7 @@ public class GridGenerator : MonoBehaviour
     {
         GridCell selectedCell = GridCells[UnityEngine.Random.Range(1, numRows - 2), UnityEngine.Random.Range(1, numColumns - 2)];
         if (!selectedCell
-            || selectedCell.IsOccupiedByObstruction())
+            || selectedCell.isOccupied)
         {
             return FindUnoccupiedCell();
         }
@@ -355,6 +348,12 @@ public class GridGenerator : MonoBehaviour
     }
 
     [ContextMenu("Spawn Teleporter")]
+    public void SpawnTeleporter()
+    {
+        SpawnTeleporter(0);
+    }
+
+
     public void SpawnTeleporter(int num)
     {
         GridCell start = FindUnoccupiedCell();
@@ -367,35 +366,41 @@ public class GridGenerator : MonoBehaviour
             SpawnTeleporter(num);
     }
 
-    public void SlowTime(float changeTimeTo, float duration)
+    public void SlowTime(float addToTime, float duration)
     {
-        Time.timeScale = changeTimeTo;
+        targetTimeScale += addToTime;
+        if (targetTimeScale < .25f)
+            targetTimeScale = .25f;
+
         alterTimeTimer.Value += duration;
+        if (executingStack) return;
+        Time.timeScale = targetTimeScale;
     }
 
     private void ChangeTime()
     {
-        if (paused || executingStack) return;
+        if (paused || executingStack || !SnakeBehaviour._Instance.SnakeEnabled) return;
         if (alterTimeTimer.Value > 0)
         {
             alterTimeTimer.Value -= Time.unscaledDeltaTime;
         }
         else
         {
-            Time.timeScale = 1;
+            targetTimeScale = 1;
+            Time.timeScale = targetTimeScale;
         }
     }
 
 
     public void DoubleEventTriggers(float duration)
     {
-        eventTriggerRepeats += 1;
+        eventTriggerRepeats *= 2;
         doubleEventTriggersTimer.Value += duration;
     }
 
     private void ChangeDoubleEventTriggers()
     {
-        if (paused || executingStack) return;
+        if (paused || executingStack || !SnakeBehaviour._Instance.SnakeEnabled) return;
         if (doubleEventTriggersTimer.Value > 0)
         {
             doubleEventTriggersTimer.Value -= Time.unscaledDeltaTime;
@@ -421,20 +426,10 @@ public class GridGenerator : MonoBehaviour
         paused = false;
     }
 
-    [ContextMenu("Reset Card Alterations")]
-    private void ResetCardAlterations()
-    {
-        NumStore[] cardAlterations = Resources.LoadAll<NumStore>(cardAlterationsResourcePath);
-        foreach (NumStore store in cardAlterations)
-        {
-            store.Reset();
-        }
-    }
-
     public void AddEventToStack(Action a, StoredTriggerEventDisplayInfo info)
     {
         // Add the action to the stack
-        eventStack.Push(a);
+        eventStack.Enqueue(a);
 
         // Add the corresponding UI element
         eventStackDisplay.Push(info);
@@ -451,6 +446,11 @@ public class GridGenerator : MonoBehaviour
     private IEnumerator ExecuteEventStack()
     {
         executingStack = true;
+
+        yield return new WaitUntil(() => !SnakeBehaviour._Instance.IsOnTargetCell);
+
+        yield return new WaitUntil(() => SnakeBehaviour._Instance.IsOnTargetCell);
+
         SnakeBehaviour._Instance.StopMoving();
         Time.timeScale = 0;
 
@@ -460,10 +460,10 @@ public class GridGenerator : MonoBehaviour
             yield return new WaitForSecondsRealtime(delayBetweenEventStackTriggers);
 
             // Pop topmost function
-            Action a = eventStack.Pop();
+            Action a = eventStack.Dequeue();
 
             // Pop topmost display
-            eventStackDisplay.Pop();
+            eventStackDisplay.Dequeue();
 
             // Call Function
             a?.Invoke();
@@ -471,12 +471,13 @@ public class GridGenerator : MonoBehaviour
 
         yield return new WaitForSecondsRealtime(delayAfterEventStackTriggers);
 
-        // Reset time scale but only if no other events have changed it
-        if (Time.timeScale == 0)
-            Time.timeScale = 1;
-
         executingStack = false;
-        SnakeBehaviour._Instance.StartMoving();
+
+        StartCoroutine(UIManager._Instance.StartSnake());
+
+        yield return new WaitUntil(() => SnakeBehaviour._Instance.SnakeEnabled);
+
+        Time.timeScale = targetTimeScale;
 
         popIn.Value = maxStackSize.Value;
     }

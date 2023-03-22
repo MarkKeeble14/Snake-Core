@@ -21,12 +21,14 @@ public class GridCellOccupant : MonoBehaviour
 
     [SerializeField] private bool breakOnEventsTriggered = true;
     protected Action onDestroy;
+    protected Vector3 targetCellPosition;
 
     protected void Update()
     {
+        targetCellPosition = currentCell.transform.position + (Vector3.up * transform.localScale.y / 2);
         if (lockToCell)
         {
-            transform.position = currentCell.transform.position + (Vector3.up * transform.localScale.y / 2);
+            transform.position = targetCellPosition;
         }
     }
 

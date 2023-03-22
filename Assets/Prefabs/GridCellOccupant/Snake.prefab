@@ -113,7 +113,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentCell: {fileID: 0}
   previousCell: {fileID: 0}
-  lockToCell: 1
+  lockToCell: 0
   obstruction: 1
   destroyable: 0
   triggersEvents: 1
@@ -122,6 +122,7 @@ MonoBehaviour:
   breakOnEventsTriggered: 0
   direction: {x: 0, y: 1}
   timeBetweenMoves: 0.5
+  snakeMoveSpeed: 10
   ghostingOpacity: 0.34
   breakAheadRange: 5
   gainBreakAheadRate: 0.25
@@ -132,7 +133,6 @@ MonoBehaviour:
   segmentsCounter: {fileID: 11400000, guid: 57e6a6e4672947b4d96b5db88fd5d8ec, type: 2}
   bombStore: {fileID: 11400000, guid: f6bbbcda8e66d6d4ea78071d5a0b3645, type: 2}
   isGhostedTimer: {fileID: 11400000, guid: 9147ac59d02cc3143bedbe3b5ede8d87, type: 2}
-  foodBetweenCards: 3
 --- !u!1001 &4513517726686786414
 PrefabInstance:
   m_ObjectHideFlags: 0

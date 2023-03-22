@@ -14,6 +14,7 @@ public class SnakeBehaviour : GridCellOccupant
     [Header("Settings")]
     [SerializeField] private Vector2Int direction = Vector2Int.right;
     [SerializeField] private float timeBetweenMoves = .25f;
+    [SerializeField] private float snakeMoveSpeed;
 
     [Header("Powerups")]
     [Header("Ghosting")]
@@ -42,11 +43,19 @@ public class SnakeBehaviour : GridCellOccupant
     private bool hasLost;
     private Vector2Int lastDirectionMoved;
     private bool snakeEnabled;
-    private bool moving;
+    public bool SnakeEnabled => snakeEnabled;
+    private bool currentlyMoving;
+    private bool moved;
     private float moveTimer;
 
     private GridCell teleportToCell;
-
+    public bool IsOnTargetCell
+    {
+        get
+        {
+            return moved;
+        }
+    }
     private bool isGhosted;
 
     // Swiping
@@ -54,17 +63,10 @@ public class SnakeBehaviour : GridCellOccupant
     Vector2 secondPressPos;
     Vector2 currentSwipe;
 
-    [SerializeField] private int foodBetweenCards;
-
     private void Start()
     {
         // Set forward vector
         transform.forward = new Vector3(direction.x, 0, direction.y);
-
-        // Reset values
-        segmentsCounter.Reset();
-        bombStore.Reset();
-        moveTimer = timeBetweenMoves;
 
         // Get a reference to the snakes renderer
         snakeMat = GetComponent<Renderer>().material;
@@ -107,10 +109,20 @@ public class SnakeBehaviour : GridCellOccupant
 
         // Update forward
         transform.forward = new Vector3(direction.x, 0, direction.y);
+        transform.position = Vector3.MoveTowards(transform.position, targetCellPosition, Time.deltaTime * snakeMoveSpeed);
+        // transform.position = targetCellPosition;
+
+        if (!moved && transform.position == targetCellPosition)
+        {
+            moved = true;
+        }
 
         // Change Directions
-        GameControls();
-        MobileControls();
+        if (!GridGenerator._Instance.IsPaused)
+        {
+            GameControls();
+            MobileControls();
+        }
 
         if (!snakeEnabled)
         {
@@ -144,24 +156,64 @@ public class SnakeBehaviour : GridCellOccupant
             }
         }
 
+        if (!moved) return;
+
         // Track movement / control when it happens
         if (moveTimer > 0)
         {
             moveTimer -= Time.deltaTime;
-            moving = false;
+            currentlyMoving = false;
         }
         else
         {
-            moving = true;
             moveTimer = timeBetweenMoves;
+            currentlyMoving = true;
+            moved = false;
         }
 
-        if (!moving)
+        if (!currentlyMoving)
         {
             return;
         }
 
-        Move();
+        CalcMove();
+    }
+
+    private void CalcMove()
+    {
+        GridCell nextCell;
+        if (teleportToCell)
+        {
+            nextCell = teleportToCell;
+            teleportToCell = null;
+        }
+        else
+        {
+            nextCell = currentCell.GetNeighbour(direction);
+        }
+
+        // Lose conditions
+        // hitting a nothing 
+        // hitting a border wall
+        // hitting an obstruction while not ghosted
+        if (!nextCell)
+        {
+            hasLost = true;
+            UIManager._Instance.OpenLoseScreen();
+        }
+        else if (nextCell.IsBorderWall())
+        {
+            hasLost = true;
+            UIManager._Instance.OpenLoseScreen();
+        }
+        else if (nextCell.IsOccupiedByObstruction() && !isGhosted)
+        {
+            hasLost = true;
+            UIManager._Instance.OpenLoseScreen();
+        }
+
+        lastDirectionMoved = direction;
+        ChangeCell(nextCell);
     }
 
     private void ChangeDirection(Vector2Int disallowDirection, Vector2Int setDirection)
@@ -171,7 +223,7 @@ public class SnakeBehaviour : GridCellOccupant
             direction = setDirection;
             if (snakeEnabled && lastDirectionMoved != direction)
             {
-                moving = true;
+                currentlyMoving = true;
                 moveTimer = 0;
             }
         }
@@ -244,7 +296,16 @@ public class SnakeBehaviour : GridCellOccupant
         {
             // increment current range
             currentRange++;
+
             selectedCells = SetSelectedCellBreakAround(currentRange, startCell, selectedCells);
+
+            foreach (GridCell cell in selectedCells)
+            {
+                // Recieved a null cell
+                if (!cell) continue;
+
+                cell.BreakDestroyables();
+            }
 
             // Wait some time
             yield return new WaitForSeconds(gainBreakAroundRate);
@@ -258,7 +319,6 @@ public class SnakeBehaviour : GridCellOccupant
             // Recieved a null cell
             if (!cell) continue;
 
-            cell.BreakDestroyables();
             cell.SetSelected(false);
         }
     }
@@ -283,34 +343,6 @@ public class SnakeBehaviour : GridCellOccupant
             cell.SetSelected(true);
         }
         return selectedCells;
-    }
-
-    private void Move()
-    {
-        GridCell nextCell;
-        if (teleportToCell)
-        {
-            nextCell = teleportToCell;
-            teleportToCell = null;
-        }
-        else
-        {
-            nextCell = currentCell.GetNeighbour(direction);
-        }
-
-        // Lose conditions
-        // hitting a nothing 
-        // hitting a border wall
-        // hitting an obstruction while not ghosted
-        if (!nextCell || nextCell.IsBorderWall() || (nextCell.IsOccupiedByObstruction() &&
-            !isGhosted))
-        {
-            hasLost = true;
-            UIManager._Instance.OpenLoseScreen();
-        }
-
-        lastDirectionMoved = direction;
-        ChangeCell(nextCell);
     }
 
     public void Grow()

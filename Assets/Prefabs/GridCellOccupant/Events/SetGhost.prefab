@@ -138,9 +138,8 @@ MonoBehaviour:
     CanBeDoubled: 1
   storedDisplayInfo:
     Label: Ghost
-    Color: {r: 0, g: 0.90923214, b: 1, a: 1}
+    Color: {r: 0.7348933, g: 0, b: 1, a: 1}
     Sprite: {fileID: 21300000, guid: f7c5f1d7b74c382448987f579850d140, type: 3}
-    Repeat: 0
   duration: {fileID: 11400000, guid: 7a5387ec2f222264290f9747b6b94f3a, type: 2}
 --- !u!1001 &6074272469785509739
 PrefabInstance:

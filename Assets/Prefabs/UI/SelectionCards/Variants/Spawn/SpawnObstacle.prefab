@@ -330,10 +330,10 @@ GameObject:
   - component: {fileID: 2548696454626873205}
   - component: {fileID: 3666324665539769845}
   - component: {fileID: 5524306401108515834}
-  - component: {fileID: 3997072912080501268}
-  - component: {fileID: 154126609546538657}
+  - component: {fileID: -4577328464161507671}
+  - component: {fileID: 6862730175740441793}
   m_Layer: 5
-  m_Name: TimeUpLastShorter
+  m_Name: SpawnObstacle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -452,25 +452,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   label: {fileID: 3840497782051982719}
   details: {fileID: 3840497783852559839}
-  type: 2
---- !u!114 &3997072912080501268
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3840497783554457722}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4be8591e680953d4cac87b421da72ae3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  label: Change Value
-  detailsPrefix: 'The Duration of Time Speed Up is Decreased by  '
-  detailsSuffix: s
-  changeBy: -0.5
-  store: {fileID: 11400000, guid: d95dbd81d223b62458e3319b54d92da8, type: 2}
---- !u!225 &154126609546538657
+  type: 1
+--- !u!225 &-4577328464161507671
 CanvasGroup:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -482,6 +465,27 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &6862730175740441793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3840497783554457722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28b9929776819524eadce9d4daf8206f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  label: Spawn
+  detailsPrefix: 
+  detailsSuffix: 
+  spawns:
+    dictionary:
+    - key: 3
+      value:
+        type: 0
+        chances: {x: 1, y: 1}
 --- !u!1 &3840497783852559837
 GameObject:
   m_ObjectHideFlags: 0

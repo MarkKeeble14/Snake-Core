@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 
 public class CallNextSelectionOnBarFill : MonoBehaviour
 {
@@ -17,11 +18,20 @@ public class CallNextSelectionOnBarFill : MonoBehaviour
     {
         bar.AddOnFullAction(delegate
         {
-            UIManager._Instance.OpenSelectionScreen();
-            nextTracker = 0;
-            bar.Set(nextTracker, next);
-            bar.ClearOnFullAction();
+            StartCoroutine(ExecuteOnFill());
         });
+    }
+
+    private IEnumerator ExecuteOnFill()
+    {
+        yield return new WaitUntil(() => !SnakeBehaviour._Instance.IsOnTargetCell);
+
+        yield return new WaitUntil(() => SnakeBehaviour._Instance.IsOnTargetCell);
+
+        UIManager._Instance.OpenSelectionScreen();
+        nextTracker = 0;
+        bar.Set(nextTracker, next);
+        bar.ClearOnFullAction();
     }
 
     private void Update()

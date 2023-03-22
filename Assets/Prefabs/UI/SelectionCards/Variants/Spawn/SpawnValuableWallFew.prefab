@@ -452,7 +452,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   label: {fileID: 3840497782051982719}
   details: {fileID: 3840497783852559839}
-  type: 2
+  type: 0
 --- !u!225 &-4577328464161507671
 CanvasGroup:
   m_ObjectHideFlags: 0

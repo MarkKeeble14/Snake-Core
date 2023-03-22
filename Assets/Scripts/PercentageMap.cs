@@ -10,11 +10,28 @@ public class PercentageMap<T>
 
     public int Count => percentageMap.Count;
 
+    private void SetDenominator()
+    {
+        for (int i = 0; i < percentageMap.Count; i++)
+        {
+            denominator += percentageMap[i].Value;
+        }
+    }
+
+    private int denominator;
+
     private SerializableKeyValuePair<T, int> GetFromDictionary()
     {
+        // Set the denominator (will happen the first time the percentage map is used)
+        if (denominator == 0)
+        {
+            SetDenominator();
+        }
+
         // Say a list has 2 elements, 1 for SoldierEnemy with number 50, and 1 for DroneEnemy with number 50
         // That means it's a 50/50 which one of the enemies will be spawned
-        int rand = RandomHelper.RandomIntExclusive(0, 100);
+
+        int rand = RandomHelper.RandomIntExclusive(0, denominator);
         float floor = 0;
         SerializableKeyValuePair<T, int> mostCommon = null;
         int largestWeight = 0;

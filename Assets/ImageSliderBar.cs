@@ -111,7 +111,7 @@ public class ImageSliderBar : MonoBehaviour
         text.text = prefix + t + suffix;
 
         // call on full action
-        if (displayedValue >= 1 - 0.025f && value == maxValue)
+        if (currentValue >= 1 && value == maxValue)
         {
             onFullAction?.Invoke();
         }

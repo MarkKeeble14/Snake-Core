@@ -6,18 +6,18 @@ public class EventStackDisplay : MonoBehaviour
     [SerializeField] private TriggerEventDisplay displayPrefab;
     [SerializeField] private Transform list;
 
-    private Stack<GameObject> spawnedDisplays = new Stack<GameObject>();
+    private Queue<GameObject> spawnedDisplays = new Queue<GameObject>();
 
     public void Push(StoredTriggerEventDisplayInfo info)
     {
         TriggerEventDisplay spawned = Instantiate(displayPrefab, list);
-        spawnedDisplays.Push(spawned.gameObject);
+        spawnedDisplays.Enqueue(spawned.gameObject);
         spawned.Set(info);
     }
 
-    public void Pop()
+    public void Dequeue()
     {
-        GameObject spawned = spawnedDisplays.Pop();
+        GameObject spawned = spawnedDisplays.Dequeue();
         Destroy(spawned);
     }
 }

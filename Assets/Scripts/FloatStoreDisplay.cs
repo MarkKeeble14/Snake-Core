@@ -7,7 +7,9 @@ public class FloatStoreDisplay : StoreDisplay
     [SerializeField] private bool round;
     [SerializeField] private int numDigits;
 
-    protected override bool Enabled => store.Value > 0;
+    [SerializeField] private bool showWhenFloatStoredIsZero;
+    protected override bool Enabled => showWhenFloatStoredIsZero || store.Value > 0;
+
 
     protected override string storeValue
     {
