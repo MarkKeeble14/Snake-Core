@@ -210,8 +210,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 72
-  m_fontSizeBase: 72
+  m_fontSize: 36
+  m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1923,6 +1923,7 @@ MonoBehaviour:
   barFill: {fileID: 865479963}
   restartTime: 1
   restartTimer: {fileID: 11400000, guid: 7c166c53a60619244a36614e7a7f49a2, type: 2}
+  selectionPopupGracePeriod: 1
 --- !u!1 &783403321
 GameObject:
   m_ObjectHideFlags: 0

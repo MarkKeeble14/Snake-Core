@@ -116,7 +116,7 @@ MonoBehaviour:
   previousCell: {fileID: 0}
   lockToCell: 1
   obstruction: 0
-  destroyable: 0
+  destroyable: 1
   triggersEvents: 0
   hasEvents: 1
   isSnake: 0
@@ -136,10 +136,10 @@ MonoBehaviour:
   eventData:
     CanBeStored: 0
     CanBeDoubled: 1
-  displayInfo:
+  storedDisplayInfo:
     Label: 
-    color: {r: 0, g: 0, b: 0, a: 0}
-    sprite: {fileID: 0}
+    Color: {r: 0, g: 0, b: 0, a: 0}
+    Sprite: {fileID: 0}
   bombs: {fileID: 11400000, guid: f6bbbcda8e66d6d4ea78071d5a0b3645, type: 2}
   valueChange: {fileID: 11400000, guid: e779b5e33075ee14998491ff981551f0, type: 2}
 --- !u!1001 &3502702875017594083

@@ -43,10 +43,22 @@ public class UIManager : MonoBehaviour
     [SerializeField] private float restartTime = 1f;
     [SerializeField] private FloatStore restartTimer;
 
+    [SerializeField] private float selectionPopupGracePeriod = 1f;
+    private float selectionPopupGracePeriodTimer;
+    public bool InSelectionPopGracePeriod => selectionPopupGracePeriodTimer > 0;
+
     // if player has more segments, high score
     // if player has same segments, less duration, high score
     // if player has same segments, more duration, no high score
     // if player has less segments, no high score
+
+    private void Update()
+    {
+        if (selectionPopupGracePeriodTimer > 0)
+        {
+            selectionPopupGracePeriodTimer -= Time.unscaledDeltaTime;
+        }
+    }
 
     [ContextMenu("ClearHighScores")]
     private void ClearHighScores()
@@ -182,6 +194,8 @@ public class UIManager : MonoBehaviour
 
         // Disable Snake
         SnakeBehaviour._Instance.StopMoving();
+
+        selectionPopupGracePeriodTimer = selectionPopupGracePeriod;
 
         SetSelections();
         foreach (GameObject obj in disableOnOpenSelectionScreen)

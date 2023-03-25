@@ -20,6 +20,7 @@ public class SelectionCard : MonoBehaviour
 
     public void Select()
     {
+        if (UIManager._Instance.InSelectionPopGracePeriod) return;
         onSelect?.Invoke();
     }
 

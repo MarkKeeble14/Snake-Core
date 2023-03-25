@@ -116,7 +116,7 @@ MonoBehaviour:
   previousCell: {fileID: 0}
   lockToCell: 1
   obstruction: 0
-  destroyable: 0
+  destroyable: 1
   triggersEvents: 0
   hasEvents: 1
   isSnake: 0
@@ -140,7 +140,6 @@ MonoBehaviour:
     Label: x2 Effects
     Color: {r: 1, g: 0.6166877, b: 0, a: 1}
     Sprite: {fileID: 21300000, guid: f7c5f1d7b74c382448987f579850d140, type: 3}
-    Repeat: 0
   durationChange: {fileID: 11400000, guid: dfc1d6ba281481d4995e641ee0d2d360, type: 2}
 --- !u!1001 &337467353828328778
 PrefabInstance:

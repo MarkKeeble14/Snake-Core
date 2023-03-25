@@ -116,7 +116,7 @@ MonoBehaviour:
   previousCell: {fileID: 0}
   lockToCell: 1
   obstruction: 0
-  destroyable: 0
+  destroyable: 1
   triggersEvents: 0
   hasEvents: 1
   isSnake: 0
@@ -138,8 +138,8 @@ MonoBehaviour:
     CanBeDoubled: 1
   storedDisplayInfo:
     Label: 
-    color: {r: 0, g: 0, b: 0, a: 0}
-    sprite: {fileID: 0}
+    Color: {r: 0, g: 0, b: 0, a: 0}
+    Sprite: {fileID: 0}
 --- !u!1001 &6836441950109698429
 PrefabInstance:
   m_ObjectHideFlags: 0

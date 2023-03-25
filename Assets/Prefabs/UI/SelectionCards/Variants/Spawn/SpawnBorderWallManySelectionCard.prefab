@@ -330,10 +330,11 @@ GameObject:
   - component: {fileID: 2548696454626873205}
   - component: {fileID: 3666324665539769845}
   - component: {fileID: 5524306401108515834}
-  - component: {fileID: -2278267065125718256}
   - component: {fileID: -4577328464161507671}
+  - component: {fileID: 6862730175740441793}
+  - component: {fileID: 6102598756871830335}
   m_Layer: 5
-  m_Name: CoinValueUp
+  m_Name: SpawnBorderWallManySelectionCard
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -452,23 +453,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   label: {fileID: 3840497782051982719}
   details: {fileID: 3840497783852559839}
---- !u!114 &-2278267065125718256
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3840497783554457722}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a34b3a9a31968d84493a9205806627b1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  label: Change Value
-  detailsPrefix: 'Coins are Worth '
-  detailsSuffix: ' More on Pickup'
-  changeBy: 1
-  store: {fileID: 11400000, guid: 45a0043cf3549564c93f711d8bd2d01f, type: 2}
+  type: 1
 --- !u!225 &-4577328464161507671
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -481,6 +466,47 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &6862730175740441793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3840497783554457722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28b9929776819524eadce9d4daf8206f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  label: Spawn
+  detailsPrefix: 
+  detailsSuffix: 
+  spawns:
+    dictionary:
+    - key: 2
+      value:
+        type: 1
+        chances: {x: 5, y: 10}
+--- !u!95 &6102598756871830335
+Animator:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3840497783554457722}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 34b4d1de784e8874c8080bc3488e0f25, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 2
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!1 &3840497783852559837
 GameObject:
   m_ObjectHideFlags: 0

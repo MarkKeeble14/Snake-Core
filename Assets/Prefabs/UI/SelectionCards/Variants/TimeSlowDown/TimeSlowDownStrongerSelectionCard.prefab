@@ -330,10 +330,11 @@ GameObject:
   - component: {fileID: 2548696454626873205}
   - component: {fileID: 3666324665539769845}
   - component: {fileID: 5524306401108515834}
-  - component: {fileID: 3289379283947128712}
-  - component: {fileID: 3452145788446874522}
+  - component: {fileID: 3997072912080501268}
+  - component: {fileID: 154126609546538657}
+  - component: {fileID: 6783072705023591500}
   m_Layer: 5
-  m_Name: DoubleEventsLastLonger
+  m_Name: TimeSlowDownStrongerSelectionCard
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -452,8 +453,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   label: {fileID: 3840497782051982719}
   details: {fileID: 3840497783852559839}
-  type: 0
---- !u!114 &3289379283947128712
+  type: 2
+--- !u!114 &3997072912080501268
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -466,11 +467,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   label: Change Value
-  detailsPrefix: 'Events are now Doubled for '
-  detailsSuffix: s More Time
-  changeBy: 0.5
-  store: {fileID: 11400000, guid: d95dbd81d223b62458e3319b54d92da8, type: 2}
---- !u!225 &3452145788446874522
+  detailsPrefix: 'The Strength of Time Speed Down is Increased by '
+  detailsSuffix: 
+  changeBy: 0.05
+  store: {fileID: 11400000, guid: fc56c2944f8768c48aaa18e99de7aefb, type: 2}
+--- !u!225 &154126609546538657
 CanvasGroup:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -482,6 +483,26 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!95 &6783072705023591500
+Animator:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3840497783554457722}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 34b4d1de784e8874c8080bc3488e0f25, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 2
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!1 &3840497783852559837
 GameObject:
   m_ObjectHideFlags: 0

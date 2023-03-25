@@ -120,13 +120,19 @@ public class SnakeBehaviour : GridCellOccupant
         // Change Directions
         if (!GridGenerator._Instance.IsPaused)
         {
-            GameControls();
+            MoveControls();
             MobileControls();
         }
 
         if (!snakeEnabled)
         {
             return;
+        }
+
+        // Place Bomb
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            TryPlaceBomb();
         }
 
         // If the isGhostedTimer is greater than 0, the snake is ghosted
@@ -375,7 +381,7 @@ public class SnakeBehaviour : GridCellOccupant
         bombStore.Value--;
     }
 
-    private void GameControls()
+    private void MoveControls()
     {
         // Up
         if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
@@ -396,12 +402,6 @@ public class SnakeBehaviour : GridCellOccupant
         if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
         {
             ChangeDirection(Vector2Int.left, Vector2Int.right);
-        }
-
-        // Place Bomb
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            TryPlaceBomb();
         }
     }
 
