@@ -344,7 +344,7 @@ public class SnakeBehaviour : GridCellOccupant
             onBreakWall.PlayOneShot();
 
             // Wait some time
-            yield return new WaitForSeconds(gainBreakAroundRate);
+            yield return new WaitForSeconds(timeBetweenMoves.Value);
 
             // redo
             yield return null;

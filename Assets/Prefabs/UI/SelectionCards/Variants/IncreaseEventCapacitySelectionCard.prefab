@@ -479,8 +479,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   label: Change Value
-  detailsPrefix: Hold an Additional Event Before Popping
-  detailsSuffix: 
+  detailsPrefix: 'Hold '
+  detailsSuffix: ' Additional Event Before Activating'
   changeBy: 1
   store: {fileID: 11400000, guid: fe39e4c3e14b8da4aaa6600327619443, type: 2}
 --- !u!95 &2955132853120117181
