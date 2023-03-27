@@ -100,30 +100,30 @@ public class UIManager : MonoBehaviour
     public void SetHighScore()
     {
         string difficulty = GetDifficultyString(GridGenerator._Instance.Difficulty);
-        string segmentsKey = difficulty + this.segmentsKey;
-        string durationKey = difficulty + this.durationKey;
+        string fullSegmentsKey = difficulty.Replace(" ", "") + segmentsKey;
+        string fullDurationKey = difficulty.Replace(" ", "") + durationKey;
         difficultyText.text = difficulty;
 
         float duration = (float)System.Math.Round(GridGenerator._Instance.GameDuration, 1);
-        if (PlayerPrefs.HasKey(segmentsKey))
+        if (PlayerPrefs.HasKey(fullSegmentsKey))
         {
-            int hsSegments = PlayerPrefs.GetInt(segmentsKey);
-            float hsDuration = PlayerPrefs.GetFloat(durationKey);
+            int hsSegments = PlayerPrefs.GetInt(fullSegmentsKey);
+            float hsDuration = PlayerPrefs.GetFloat(fullDurationKey);
 
             currentScoreText.text = "Size = " + segments.Value + " | " + duration + "s";
 
             // Saving High Score
             if (segments.Value > hsSegments)
             {
-                PlayerPrefs.SetInt(segmentsKey, segments.Value);
-                PlayerPrefs.SetFloat(durationKey, duration);
+                PlayerPrefs.SetInt(fullSegmentsKey, segments.Value);
+                PlayerPrefs.SetFloat(fullDurationKey, duration);
                 highScoreText.text = "New High Score!: " + currentScoreText.text;
                 onNewHighScore.PlayOneShot();
             }
             else if (segments.Value == hsSegments && duration < hsDuration)
             {
-                PlayerPrefs.SetInt(segmentsKey, segments.Value);
-                PlayerPrefs.SetFloat(durationKey, duration);
+                PlayerPrefs.SetInt(fullSegmentsKey, segments.Value);
+                PlayerPrefs.SetFloat(fullDurationKey, duration);
                 highScoreText.text = "New High Score!: " + currentScoreText.text;
                 onNewHighScore.PlayOneShot();
             }
@@ -134,13 +134,14 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            PlayerPrefs.SetInt(segmentsKey, segments.Value);
-            PlayerPrefs.SetFloat(durationKey, duration);
+            PlayerPrefs.SetInt(fullSegmentsKey, segments.Value);
+            PlayerPrefs.SetFloat(fullDurationKey, duration);
 
             currentScoreText.text = "Size = " + segments.Value + " | " + duration + "s";
             highScoreText.text = "New High Score!: " + currentScoreText.text;
             onNewHighScore.PlayOneShot();
         }
+        PlayerPrefs.Save();
     }
 
     public void SetScores()
