@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
+
 public class GridCellOccupant : MonoBehaviour
 {
     [SerializeField] protected GridCell currentCell;
@@ -23,6 +24,14 @@ public class GridCellOccupant : MonoBehaviour
     protected Action onDestroy;
     protected Vector3 targetCellPosition;
 
+    [SerializeField] private GameObject[] onBreakParticles;
+
+    private float graceTimer = .1f;
+
+    [SerializeField] private AudioClipContainer onBreak;
+    [SerializeField] private AudioClipContainer onPickup;
+    private bool hasBeenPickedUp;
+
     protected void Update()
     {
         targetCellPosition = currentCell.transform.position + (Vector3.up * transform.localScale.y / 2);
@@ -30,6 +39,9 @@ public class GridCellOccupant : MonoBehaviour
         {
             transform.position = targetCellPosition;
         }
+
+        if (graceTimer > 0)
+            graceTimer -= Time.deltaTime;
     }
 
     public virtual void ChangeCell(GridCell nextCell)
@@ -90,6 +102,10 @@ public class GridCellOccupant : MonoBehaviour
                 }
             }
         }
+
+        hasBeenPickedUp = true;
+        onPickup.PlayOneShot();
+
         if (breakOnEventsTriggered)
             Break();
     }
@@ -99,10 +115,22 @@ public class GridCellOccupant : MonoBehaviour
         onDestroy += callback;
     }
 
-    public virtual void Break()
+    public virtual bool Break()
     {
+        if (graceTimer > 0)
+            return false;
+
+        foreach (GameObject particles in onBreakParticles)
+        {
+            Instantiate(particles, transform.position, Quaternion.identity);
+        }
+
+        if (!hasBeenPickedUp)
+            onBreak.PlayOneShot();
+
         currentCell.RemoveOccupant(this);
         onDestroy?.Invoke();
         Destroy(gameObject);
+        return true;
     }
 }

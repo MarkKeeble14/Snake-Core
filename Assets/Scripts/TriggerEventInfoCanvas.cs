@@ -21,7 +21,7 @@ public class TriggerEventInfoCanvas : MonoBehaviour
         if (quantitative)
         {
             int quantity = Mathf.RoundToInt(numStore.GetValue() * GridGenerator._Instance.EventTriggerRepeats);
-            text.text = "+" + quantity.ToString() + eventType + (quantity > 1 ? "s" : "");
+            text.text = "+ " + quantity.ToString() + eventType + (quantity > 1 ? "s" : "");
         }
         else
         {

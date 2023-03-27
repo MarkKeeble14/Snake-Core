@@ -20,7 +20,12 @@ public class SelectionCard : MonoBehaviour
 
     public void Select()
     {
-        if (UIManager._Instance.InSelectionPopGracePeriod) return;
+        if (UIManager._Instance.InSelectionPopGracePeriod)
+        {
+            UIManager._Instance.OnFailSelectCard.PlayOneShot();
+            return;
+        }
+        UIManager._Instance.CardTypeDetailsDictionary[type].onSelect.PlayOneShot();
         onSelect?.Invoke();
     }
 
@@ -37,7 +42,7 @@ public class SelectionCard : MonoBehaviour
         AddOnSelectAction(p);
 
         // Set Card Color
-        Color c = UIManager._Instance.CardTypeColorDictionary[type];
+        Color c = UIManager._Instance.CardTypeDetailsDictionary[type].color;
         c.a = .5f;
         cardBackground.color = c;
     }

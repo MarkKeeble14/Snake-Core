@@ -13,7 +13,7 @@ public class SnakeBehaviour : GridCellOccupant
 
     [Header("Settings")]
     [SerializeField] private Vector2Int direction = Vector2Int.right;
-    [SerializeField] private float timeBetweenMoves = .25f;
+    [SerializeField] private FloatStore timeBetweenMoves;
     [SerializeField] private float snakeMoveSpeed;
 
     [Header("Powerups")]
@@ -63,13 +63,21 @@ public class SnakeBehaviour : GridCellOccupant
     Vector2 secondPressPos;
     Vector2 currentSwipe;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClipContainer onMove;
+    [SerializeField] private TogglableAudioSource whileGhost;
+    [SerializeField] private AudioClipContainer onBreakWall;
+    [SerializeField] private AudioClipContainer onGrow;
+    [SerializeField] private AudioClipContainer onTeleport;
+    [SerializeField] private AudioClipContainer onPlaceBomb;
+
     private void Start()
     {
         // Set forward vector
         transform.forward = new Vector3(direction.x, 0, direction.y);
 
         // Get a reference to the snakes renderer
-        snakeMat = GetComponent<Renderer>().material;
+        snakeMat = GetComponent<Renderer>().sharedMaterial;
 
         // Add head to linked list
         snakeSegments.AddFirst(this);
@@ -152,6 +160,7 @@ public class SnakeBehaviour : GridCellOccupant
         else
         {
             isGhosted = false;
+            whileGhost.SetActive(false);
 
             // Change opacity if snake is ghosting
             if (snakeMat.color.a == ghostingOpacity)
@@ -172,7 +181,7 @@ public class SnakeBehaviour : GridCellOccupant
         }
         else
         {
-            moveTimer = timeBetweenMoves;
+            moveTimer = timeBetweenMoves.Value;
             currentlyMoving = true;
             moved = false;
         }
@@ -192,10 +201,12 @@ public class SnakeBehaviour : GridCellOccupant
         {
             nextCell = teleportToCell;
             teleportToCell = null;
+            onTeleport.PlayOneShot();
         }
         else
         {
             nextCell = currentCell.GetNeighbour(direction);
+            onMove.PlayOneShot();
         }
 
         // Lose conditions
@@ -297,6 +308,7 @@ public class SnakeBehaviour : GridCellOccupant
         List<GridCell> selectedCells = new List<GridCell>();
         GridCell startCell = currentCell;
         int currentRange = 0;
+        List<GridCell> brokenCells = new List<GridCell>();
 
         while (currentRange < breakAroundRange)
         {
@@ -305,13 +317,31 @@ public class SnakeBehaviour : GridCellOccupant
 
             selectedCells = SetSelectedCellBreakAround(currentRange, startCell, selectedCells);
 
-            foreach (GridCell cell in selectedCells)
+            for (int i = 0; i < selectedCells.Count;)
             {
+                GridCell cell = selectedCells[i];
+
                 // Recieved a null cell
-                if (!cell) continue;
+                if (!cell)
+                {
+                    // Debug.Log("Attempted to Break a Null Cell");
+                    selectedCells.RemoveAt(i);
+                    continue;
+                }
+
+                if (brokenCells.Contains(cell))
+                {
+                    // Debug.Log("Attempted to Repeat Breaking a Cell");
+                    selectedCells.RemoveAt(i);
+                    continue;
+                }
 
                 cell.BreakDestroyables();
+                brokenCells.Add(cell);
+                i++;
             }
+
+            onBreakWall.PlayOneShot();
 
             // Wait some time
             yield return new WaitForSeconds(gainBreakAroundRate);
@@ -321,6 +351,14 @@ public class SnakeBehaviour : GridCellOccupant
         }
 
         foreach (GridCell cell in selectedCells)
+        {
+            // Recieved a null cell
+            if (!cell) continue;
+
+            cell.SetSelected(false);
+        }
+
+        foreach (GridCell cell in brokenCells)
         {
             // Recieved a null cell
             if (!cell) continue;
@@ -339,7 +377,7 @@ public class SnakeBehaviour : GridCellOccupant
         }
 
         // Determine new cells to select
-        selectedCells = origin.GetNeighbours(false, true, Mathf.RoundToInt(range));
+        selectedCells = origin.GetNeighbours(false, true, true, Mathf.RoundToInt(range));
 
         // Select new cells
         foreach (GridCell cell in selectedCells)
@@ -359,24 +397,29 @@ public class SnakeBehaviour : GridCellOccupant
         // Add new segments
         GridCell spawnCell = snakeSegments.Last.Value.PreviousCell;
         if (spawnCell == null)
-            spawnCell = snakeSegments.Last.Value.CurrentCell.GetNeighbour(false, false);
+            spawnCell = snakeSegments.Last.Value.CurrentCell.GetNeighbour(false, false, true);
         GridCellOccupant spawnedSegment = spawnCell.SpawnOccupant(snakeTailPrefab);
         snakeSegments.AddLast(spawnedSegment);
+
+        onGrow.PlayOneShot();
     }
 
     public void Teleport(GridCell teleportToCell)
     {
         this.teleportToCell = teleportToCell;
+
     }
 
     public void SetGhost(float duration)
     {
         isGhostedTimer.Value += duration;
+        whileGhost.SetActive(true);
     }
 
     public void TryPlaceBomb()
     {
         if (bombStore.Value <= 0) return;
+        onPlaceBomb.PlayOneShot();
         StartCoroutine(BreakAround());
         bombStore.Value--;
     }

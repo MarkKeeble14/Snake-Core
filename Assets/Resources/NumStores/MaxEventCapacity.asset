@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5aa2687c63b125048a6a9c3b8fa1cff7, type: 3}
   m_Name: MaxEventCapacity
   m_EditorClassIdentifier: 
-  defaultValue: 3
+  defaultValue: 4

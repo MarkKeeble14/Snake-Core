@@ -46,7 +46,12 @@ public class GridGenerator : MonoBehaviour
     [Header("Prefabs")]
     [SerializeField] private GridCell gridCellPrefab;
     [SerializeField] private SnakeBehaviour snakePrefab;
-    [SerializeField] private GridCellOccupant wallPrefab;
+
+    [SerializeField] private GridCellOccupant regularWallPrefab;
+    [SerializeField] private GridCellOccupant dangerousWallPrefab;
+    [SerializeField] private GridCellOccupant valuableWallPrefab;
+
+
     [SerializeField] private GridCellOccupant foodPrefab;
     [SerializeField] private GridCellOccupant coinPrefab;
     [SerializeField] private GridCellOccupant bombPrefab;
@@ -71,13 +76,14 @@ public class GridGenerator : MonoBehaviour
     private bool paused;
     public bool IsPaused => paused;
     private float targetTimeScale;
+    private bool gameStarted;
+    public float GameDuration { get; private set; }
 
     [Header("References")]
     [SerializeField] private CinemachineVirtualCamera vCam;
 
-    private List<ArrowPointer> spawnedFoodPointers = new List<ArrowPointer>();
-
     private List<Wall> spawnedOres = new List<Wall>();
+    private List<ArrowPointer> spawnedFoodPointers = new List<ArrowPointer>();
 
     [Header("Event Stack")]
     [SerializeField] private IntStore maxStackSize;
@@ -87,6 +93,19 @@ public class GridGenerator : MonoBehaviour
     [SerializeField] private float delayAfterEventStackTriggers = 1f;
     [SerializeField] private IntStore popIn;
     private bool executingStack;
+
+    [Header("Audio")]
+    [SerializeField] private TemporaryAudioSource tempAudioSource;
+    [SerializeField] private AudioClipContainer onStackPop;
+    [SerializeField] private AudioClipContainer onStackDone;
+    [SerializeField] private AudioClipContainer onBeginGame;
+
+    [Header("Music")]
+    [SerializeField] private AudioSource music;
+    [SerializeField] private float musicMaxVolume = .3f;
+    [SerializeField] private float musicFadeRate = .25f;
+
+    public Difficulty Difficulty { get; set; }
 
     private void Awake()
     {
@@ -121,7 +140,14 @@ public class GridGenerator : MonoBehaviour
 
     private void Update()
     {
+        popIn.Value = maxStackSize.Value - eventStack.Count;
+
         if (paused) return;
+
+        if (gameStarted)
+        {
+            GameDuration += Time.unscaledDeltaTime;
+        }
 
         ChangeTime();
         ChangeDoubleEventTriggers();
@@ -130,6 +156,9 @@ public class GridGenerator : MonoBehaviour
     public void StartGame(float delay)
     {
         StartCoroutine(UIManager._Instance.StartSnake(delay));
+        gameStarted = true;
+        onBeginGame.PlayOneShot();
+        StartCoroutine(FadeInMusic());
     }
 
     private void Generate()
@@ -197,36 +226,37 @@ public class GridGenerator : MonoBehaviour
                 // Spawn Border Walls
                 if (i == 0 || i == numRows - 1 || p == 0 || p == numColumns - 1)
                 {
-                    Wall wall = (Wall)spawned.SpawnOccupant(wallPrefab);
+                    Wall wall = (Wall)spawned.SpawnOccupant(dangerousWallPrefab);
                     wall.transform.SetParent(transform, true);
-                    wall.transform.localScale = new Vector3(wall.transform.localScale.x, 1 * RandomHelper.RandomFloat(minMaxBorderWallHeightScale), wall.transform.localScale.z);
                     wall.IsBorderWall = true;
-                    wall.SetWallType(WallType.BORDER);
                     continue;
                 }
 
                 // Spawn Regular Wall
                 if (wallNoiseMap[i, p] > wallSamplePerlinMinimumValue)
                 {
-                    // Spawn wall
-                    Wall wall = (Wall)spawned.SpawnOccupant(wallPrefab);
-                    wall.transform.localScale = new Vector3(wall.transform.localScale.x, 1 * RandomHelper.RandomFloat(minMaxNormalWallHeightScale), wall.transform.localScale.z);
-                    wall.SetWallType(WallType.NORMAL);
-
-                    // Add it as a child under the generator to reduce clutter
-                    wall.transform.SetParent(transform, true);
-
+                    Wall wall;
                     // Set if wall should drop coin on break
                     if (coinNoiseMap[i, p] > coinSamplePerlinMinimumValue)
                     {
-                        wall.SetWallType(WallType.VALUABLE);
+                        // Spawn wall
+                        wall = (Wall)spawned.SpawnOccupant(valuableWallPrefab);
                         wall.AddOnDestroyCallback(delegate
                         {
                             wall.CurrentCell.SpawnOccupant(coinPrefab);
                             spawnedOres.Remove(wall);
                         });
                         spawnedOres.Add(wall);
+
                     }
+                    else
+                    {
+                        // Spawn wall
+                        wall = (Wall)spawned.SpawnOccupant(regularWallPrefab);
+
+                    }
+                    // Add it as a child under the generator to reduce clutter
+                    wall.transform.SetParent(transform, true);
                 }
             }
         }
@@ -321,19 +351,19 @@ public class GridGenerator : MonoBehaviour
 
     public void SpawnWall(WallType type, int num)
     {
-        Wall wall = (Wall)FindUnoccupiedCell().SpawnOccupant(wallPrefab);
-        wall.transform.SetParent(transform, true);
-        wall.SetWallType(type);
+        GridCell spawnOn = FindUnoccupiedCell();
+        Wall wall;
         switch (type)
         {
             case WallType.NORMAL:
-                wall.transform.localScale = new Vector3(wall.transform.localScale.x, 1 * RandomHelper.RandomFloat(minMaxNormalWallHeightScale), wall.transform.localScale.z);
+                wall = (Wall)spawnOn.SpawnOccupant(regularWallPrefab);
                 break;
             case WallType.BORDER:
+                wall = (Wall)spawnOn.SpawnOccupant(dangerousWallPrefab);
                 wall.IsBorderWall = true;
-                wall.transform.localScale = new Vector3(wall.transform.localScale.x, 1 * RandomHelper.RandomFloat(minMaxBorderWallHeightScale), wall.transform.localScale.z);
                 break;
             case WallType.VALUABLE:
+                wall = (Wall)spawnOn.SpawnOccupant(valuableWallPrefab);
                 wall.AddOnDestroyCallback(delegate
                 {
                     wall.CurrentCell.SpawnOccupant(coinPrefab);
@@ -341,8 +371,10 @@ public class GridGenerator : MonoBehaviour
                 });
                 spawnedOres.Add(wall);
                 break;
+            default:
+                throw new UnhandledSwitchCaseException();
         }
-
+        wall.transform.SetParent(transform, true);
         if (--num > 0)
             SpawnWall(type, num);
     }
@@ -352,7 +384,6 @@ public class GridGenerator : MonoBehaviour
     {
         SpawnTeleporter(0);
     }
-
 
     public void SpawnTeleporter(int num)
     {
@@ -434,8 +465,6 @@ public class GridGenerator : MonoBehaviour
         // Add the corresponding UI element
         eventStackDisplay.Push(info);
 
-        popIn.Value--;
-
         // if over the stack limit, call all functions in the stack
         if (eventStack.Count >= maxStackSize.Value)
         {
@@ -446,6 +475,8 @@ public class GridGenerator : MonoBehaviour
     private IEnumerator ExecuteEventStack()
     {
         executingStack = true;
+
+        onStackPop.PlayOneShot();
 
         yield return new WaitUntil(() => !SnakeBehaviour._Instance.IsOnTargetCell);
 
@@ -469,6 +500,8 @@ public class GridGenerator : MonoBehaviour
             a?.Invoke();
         }
 
+        onStackDone.PlayOneShot();
+
         yield return new WaitForSecondsRealtime(delayAfterEventStackTriggers);
 
         executingStack = false;
@@ -478,7 +511,24 @@ public class GridGenerator : MonoBehaviour
         yield return new WaitUntil(() => SnakeBehaviour._Instance.SnakeEnabled);
 
         Time.timeScale = targetTimeScale;
+    }
 
-        popIn.Value = maxStackSize.Value;
+    private IEnumerator FadeInMusic()
+    {
+        music.volume = 0;
+        music.Play();
+
+        while (music.volume < musicMaxVolume)
+        {
+            music.volume += Time.unscaledDeltaTime * musicFadeRate;
+            yield return null;
+        }
+        music.volume = musicMaxVolume;
+    }
+
+    public void PlayFromTemporaryAudioSource(AudioClipContainer clip)
+    {
+        TemporaryAudioSource source = Instantiate(tempAudioSource, SnakeBehaviour._Instance.transform.position, Quaternion.identity);
+        source.Play(clip);
     }
 }

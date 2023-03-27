@@ -13,11 +13,20 @@ public class GridCell : MonoBehaviour
     private int x, y;
 
     public bool isOccupied => occupants.Count > 0;
+
+    public bool Selected { get; private set; }
+
     private List<GridCellOccupant> occupants = new List<GridCellOccupant>();
+
+    [SerializeField] private Renderer topRenderer;
+    [SerializeField] private int materialIndex = 1;
+
+    [Header("Polish")]
+    [SerializeField] private GameObject[] onBreakParticles;
 
     private void Awake()
     {
-        material = GetComponent<Renderer>().material;
+        material = topRenderer.materials[materialIndex];
         defaultColor = material.color;
     }
 
@@ -27,9 +36,15 @@ public class GridCell : MonoBehaviour
         this.y = y;
     }
 
-    public void SetSelected(bool selected)
+    public void SetSelected(bool v)
     {
-        if (selected)
+        Selected = v;
+        SetSelectedColor();
+    }
+
+    public void SetSelectedColor()
+    {
+        if (Selected)
             material.color = selectedColor;
         else
             material.color = defaultColor;
@@ -122,14 +137,14 @@ public class GridCell : MonoBehaviour
         return neighbouringDirections;
     }
 
-    public GridCell GetNeighbour(bool includeDiagonals, bool allowObstructed)
+    public GridCell GetNeighbour(bool includeDiagonals, bool allowObstructed, bool allowSelected)
     {
-        List<GridCell> options = GetNeighbours(includeDiagonals, allowObstructed);
+        List<GridCell> options = GetNeighbours(includeDiagonals, allowObstructed, allowSelected);
         if (options.Count == 0) return null;
         return options[UnityEngine.Random.Range(0, options.Count)];
     }
 
-    public List<GridCell> GetNeighbours(bool includeDiagonals, bool allowObstructed, int steps = 1)
+    public List<GridCell> GetNeighbours(bool includeDiagonals, bool allowObstructed, bool allowSelected, int steps = 1)
     {
         List<Vector2Int> neighbouringDirections = GetNeighbouringDirections(includeDiagonals);
         List<GridCell> neighbours = new List<GridCell>();
@@ -154,8 +169,10 @@ public class GridCell : MonoBehaviour
                 // if recieved a null cell, we can skip it
                 if (!cell) continue;
 
+                if (!allowSelected && cell.Selected) continue;
+
                 // Get all neighbours of the other cell
-                List<GridCell> cellNeighbours = cell.GetNeighbours(includeDiagonals, allowObstructed, steps);
+                List<GridCell> cellNeighbours = cell.GetNeighbours(includeDiagonals, allowObstructed, allowSelected, steps);
                 foreach (GridCell cellNeighbour in cellNeighbours)
                 {
                     // Make sure we don't add duplicates
@@ -180,6 +197,9 @@ public class GridCell : MonoBehaviour
 
     public void BreakObstructions()
     {
+        // Spawn Particles
+        SpawnOnBreakParticles();
+
         for (int i = 0; i < occupants.Count;)
         {
             GridCellOccupant occupant = occupants[i];
@@ -196,17 +216,31 @@ public class GridCell : MonoBehaviour
 
     public void BreakDestroyables()
     {
+        // Spawn Particles
+        SpawnOnBreakParticles();
+
         for (int i = 0; i < occupants.Count;)
         {
             GridCellOccupant occupant = occupants[i];
             if (occupant.IsDestroyable && !occupant.IsBorderWall)
             {
-                occupant.Break();
+                if (!occupant.Break())
+                {
+                    i++;
+                }
             }
             else
             {
                 i++;
             }
+        }
+    }
+
+    private void SpawnOnBreakParticles()
+    {
+        foreach (GameObject particles in onBreakParticles)
+        {
+            Instantiate(particles, transform.position, Quaternion.identity);
         }
     }
 

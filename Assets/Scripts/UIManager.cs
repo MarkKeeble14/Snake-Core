@@ -15,6 +15,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private string segmentsKey = "Segments";
     [SerializeField] private string durationKey = "Duration";
 
+    [SerializeField] private TextMeshProUGUI difficultyText;
     [SerializeField] private TextMeshProUGUI currentScoreText;
     [SerializeField] private TextMeshProUGUI highScoreText;
 
@@ -35,8 +36,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private int rerollCost;
     [SerializeField] private float rerollCostMultiplyBy;
     [SerializeField] private TextMeshProUGUI rerollCostText;
-    [SerializeField] private SerializableDictionary<CardType, Color> cardTypeColorDictionary = new SerializableDictionary<CardType, Color>();
-    public SerializableDictionary<CardType, Color> CardTypeColorDictionary { get { return cardTypeColorDictionary; } }
+    [SerializeField] private SerializableDictionary<CardType, CardTypeDetails> cardTypeDetailsDictionary = new SerializableDictionary<CardType, CardTypeDetails>();
+    public SerializableDictionary<CardType, CardTypeDetails> CardTypeDetailsDictionary { get { return cardTypeDetailsDictionary; } }
 
     [SerializeField] private CallNextSelectionOnBarFill barFill;
 
@@ -47,10 +48,40 @@ public class UIManager : MonoBehaviour
     private float selectionPopupGracePeriodTimer;
     public bool InSelectionPopGracePeriod => selectionPopupGracePeriodTimer > 0;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClipContainer onOpenCardSelectionScreen;
+    [SerializeField] private AudioClipContainer onCloseCardSelectionScreen;
+    [SerializeField] private AudioClipContainer onOpenEndGameScreen;
+    [SerializeField] private AudioClipContainer onTellSnakeMove;
+    [SerializeField] private AudioClipContainer onSnakeStartMove;
+    [SerializeField] private AudioClipContainer onNewHighScore;
+    [SerializeField] private AudioClipContainer onRerollCardSelections;
+    [SerializeField] private AudioClipContainer onFailSelectCard;
+    public AudioClipContainer OnFailSelectCard => onFailSelectCard;
+
     // if player has more segments, high score
     // if player has same segments, less duration, high score
     // if player has same segments, more duration, no high score
     // if player has less segments, no high score
+
+    public string GetDifficultyString(Difficulty d)
+    {
+        switch (d)
+        {
+            case Difficulty.SLOW:
+                return "Slow";
+            case Difficulty.REGULAR:
+                return "Regular";
+            case Difficulty.FAST:
+                return "Fast";
+            case Difficulty.EXTRA_FAST:
+                return "Extra Fast";
+            case Difficulty.IMPOSSIBLE:
+                return "Impossible";
+            default:
+                throw new UnhandledSwitchCaseException();
+        }
+    }
 
     private void Update()
     {
@@ -68,7 +99,12 @@ public class UIManager : MonoBehaviour
 
     public void SetHighScore()
     {
-        float duration = (float)System.Math.Round(Time.timeSinceLevelLoad, 1);
+        string difficulty = GetDifficultyString(GridGenerator._Instance.Difficulty);
+        string segmentsKey = difficulty + this.segmentsKey;
+        string durationKey = difficulty + this.durationKey;
+        difficultyText.text = difficulty;
+
+        float duration = (float)System.Math.Round(GridGenerator._Instance.GameDuration, 1);
         if (PlayerPrefs.HasKey(segmentsKey))
         {
             int hsSegments = PlayerPrefs.GetInt(segmentsKey);
@@ -82,12 +118,14 @@ public class UIManager : MonoBehaviour
                 PlayerPrefs.SetInt(segmentsKey, segments.Value);
                 PlayerPrefs.SetFloat(durationKey, duration);
                 highScoreText.text = "New High Score!: " + currentScoreText.text;
+                onNewHighScore.PlayOneShot();
             }
             else if (segments.Value == hsSegments && duration < hsDuration)
             {
                 PlayerPrefs.SetInt(segmentsKey, segments.Value);
                 PlayerPrefs.SetFloat(durationKey, duration);
                 highScoreText.text = "New High Score!: " + currentScoreText.text;
+                onNewHighScore.PlayOneShot();
             }
             else
             {
@@ -101,6 +139,7 @@ public class UIManager : MonoBehaviour
 
             currentScoreText.text = "Size = " + segments.Value + " | " + duration + "s";
             highScoreText.text = "New High Score!: " + currentScoreText.text;
+            onNewHighScore.PlayOneShot();
         }
     }
 
@@ -123,6 +162,8 @@ public class UIManager : MonoBehaviour
             obj.SetActive(true);
         }
 
+        onOpenEndGameScreen.PlayOneShot();
+
         GridGenerator._Instance.Pause();
     }
 
@@ -138,12 +179,15 @@ public class UIManager : MonoBehaviour
         coins.Value -= rerollCost;
         rerollCost = Mathf.CeilToInt(rerollCost * rerollCostMultiplyBy);
         rerollCostText.text = rerollCost.ToString();
+
+        onRerollCardSelections.PlayOneShot();
     }
 
     [ContextMenu("CloseSelectionScreen")]
     public void CloseSelectionScreen()
     {
         ClearSelections();
+        onCloseCardSelectionScreen.PlayOneShot();
 
         foreach (GameObject obj in disableOnOpenSelectionScreen)
         {
@@ -162,11 +206,15 @@ public class UIManager : MonoBehaviour
     {
         restartTimer.Value = restartTime;
 
+        onTellSnakeMove.PlayOneShot();
+
         while (restartTimer.Value > 0)
         {
             restartTimer.Value -= Time.unscaledDeltaTime;
             yield return null;
         }
+
+        onSnakeStartMove.PlayOneShot();
 
         // Re-enable Snake
         SnakeBehaviour._Instance.StartMoving();
@@ -194,6 +242,8 @@ public class UIManager : MonoBehaviour
 
         // Disable Snake
         SnakeBehaviour._Instance.StopMoving();
+
+        onOpenCardSelectionScreen.PlayOneShot();
 
         selectionPopupGracePeriodTimer = selectionPopupGracePeriod;
 
