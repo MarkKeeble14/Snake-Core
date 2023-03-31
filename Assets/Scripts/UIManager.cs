@@ -1,8 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
@@ -10,6 +13,12 @@ public class UIManager : MonoBehaviour
     private void Awake()
     {
         _Instance = this;
+    }
+
+    private void Start()
+    {
+        // 
+        LoadSettings();
     }
 
     [SerializeField] private string segmentsKey = "Segments";
@@ -21,6 +30,15 @@ public class UIManager : MonoBehaviour
 
     [SerializeField] private IntStore segments;
     [SerializeField] private IntStore coins;
+
+    [Header("Control Scheme")]
+    private ControlScheme controlScheme = ControlScheme.SWIPE;
+    public bool UseSwipe => controlScheme == ControlScheme.SWIPE;
+    public bool UseButtons => controlScheme == ControlScheme.BUTTONS;
+    [SerializeField] private SerializableDictionary<ControlScheme, Sprite> controlSchemeSpriteDict = new SerializableDictionary<ControlScheme, Sprite>();
+    [SerializeField] private Image controlSchemeIcon;
+    [SerializeField] private GameObject changeDirectionsButtonsContainer;
+    private string controlSchemeKey = "controlScheme";
 
     [Header("Lose Screen")]
     [SerializeField] private GameObject[] enableOnOpenLoseScreen;
@@ -59,10 +77,33 @@ public class UIManager : MonoBehaviour
     [SerializeField] private AudioClipContainer onFailSelectCard;
     public AudioClipContainer OnFailSelectCard => onFailSelectCard;
 
+    [SerializeField] private bool sfxVolumeEnabled = true;
+    [SerializeField] private bool musicVolumeEnabled = true;
+    [SerializeField] private float sfxVolumeDefault = .7f;
+    [SerializeField] private float musicVolumeDefault = .7f;
+    [SerializeField] private float sfxVolumeMin = .0001f;
+    [SerializeField] private float musicVolumeMin = .0001f;
+    private string sfxVolumeKey = "sfxVolume";
+    private string musicVolumeKey = "musicVolume";
+    [SerializeField] private GameObject sfxVolumeCross;
+    [SerializeField] private GameObject musicVolumeCross;
+    [SerializeField] private TextMeshProUGUI controlsText;
+    [SerializeField] private TextMeshProUGUI sfxText;
+    [SerializeField] private TextMeshProUGUI musicText;
+    [SerializeField] private AudioMixer mixer;
+
     // if player has more segments, high score
     // if player has same segments, less duration, high score
     // if player has same segments, more duration, no high score
     // if player has less segments, no high score
+
+    private void Update()
+    {
+        if (selectionPopupGracePeriodTimer > 0)
+        {
+            selectionPopupGracePeriodTimer -= Time.unscaledDeltaTime;
+        }
+    }
 
     public string GetDifficultyString(Difficulty d)
     {
@@ -83,18 +124,104 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        if (selectionPopupGracePeriodTimer > 0)
-        {
-            selectionPopupGracePeriodTimer -= Time.unscaledDeltaTime;
-        }
-    }
-
     [ContextMenu("ClearHighScores")]
     private void ClearHighScores()
     {
         PlayerPrefs.DeleteAll();
+    }
+
+    public void ToggleControlScheme()
+    {
+        switch (controlScheme)
+        {
+            case ControlScheme.BUTTONS:
+                controlScheme = ControlScheme.SWIPE;
+                break;
+            case ControlScheme.SWIPE:
+                controlScheme = ControlScheme.BUTTONS;
+                break;
+        }
+        SetControlScheme(controlScheme);
+    }
+
+    private void SetControlScheme(ControlScheme scheme)
+    {
+        controlScheme = scheme;
+        switch (controlScheme)
+        {
+            case ControlScheme.BUTTONS:
+                changeDirectionsButtonsContainer.SetActive(true);
+                break;
+            case ControlScheme.SWIPE:
+                changeDirectionsButtonsContainer.SetActive(false);
+                break;
+        }
+        controlSchemeIcon.sprite = controlSchemeSpriteDict[controlScheme];
+        PlayerPrefs.SetInt(controlSchemeKey, (int)scheme);
+
+        string before = controlScheme.ToString();
+        string after = char.ToUpper(before.First()) + before.Substring(1).ToLower();
+        controlsText.text = "Controls:\n" + after;
+    }
+
+    public void ToggleMusic()
+    {
+        musicVolumeEnabled = !musicVolumeEnabled;
+        musicVolumeCross.SetActive(!musicVolumeEnabled);
+        musicText.text = "Music\n" + (musicVolumeEnabled ? "On" : "Off");
+        SetMusicVolume(musicVolumeEnabled ? musicVolumeDefault : musicVolumeMin);
+    }
+
+    public void ToggleSFX()
+    {
+        sfxVolumeEnabled = !sfxVolumeEnabled;
+        sfxVolumeCross.SetActive(!sfxVolumeEnabled);
+        sfxText.text = "SFX\n" + (sfxVolumeEnabled ? "On" : "Off");
+        SetSFXVolume(sfxVolumeEnabled ? sfxVolumeDefault : sfxVolumeMin);
+    }
+
+    public void SetSFXVolume(float percent)
+    {
+        PlayerPrefs.SetFloat(sfxVolumeKey, percent);
+        mixer.SetFloat("SFXVolume", Mathf.Log10(percent) * 20);
+    }
+
+    public void SetMusicVolume(float percent)
+    {
+        PlayerPrefs.SetFloat(musicVolumeKey, percent);
+        mixer.SetFloat("MusicVolume", Mathf.Log10(percent) * 20);
+    }
+
+    public void LoadSettings()
+    {
+        if (PlayerPrefs.HasKey(musicVolumeKey))
+        {
+            float musicVolume = PlayerPrefs.GetFloat(musicVolumeKey);
+            musicVolumeEnabled = musicVolume > musicVolumeMin;
+            musicVolumeCross.SetActive(!musicVolumeEnabled);
+            musicText.text = "Music\n" + (musicVolumeEnabled ? "On" : "Off");
+            SetMusicVolume(musicVolume);
+        }
+
+        if (PlayerPrefs.HasKey(sfxVolumeKey))
+        {
+            float sfxVolume = PlayerPrefs.GetFloat(sfxVolumeKey);
+            sfxVolumeEnabled = sfxVolume > sfxVolumeMin;
+            sfxVolumeCross.SetActive(!sfxVolumeEnabled);
+            sfxText.text = "SFX\n" + (sfxVolumeEnabled ? "On" : "Off");
+            SetSFXVolume(sfxVolume);
+        }
+
+        if (PlayerPrefs.HasKey(controlSchemeKey))
+        {
+            int storedScheme = PlayerPrefs.GetInt(controlSchemeKey);
+            // Debug.Log((ControlScheme)storedScheme);
+            SetControlScheme((ControlScheme)storedScheme);
+        }
+        else
+        {
+            PlayerPrefs.SetInt(controlSchemeKey, (int)controlScheme);
+        }
     }
 
     public void SetHighScore()

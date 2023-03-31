@@ -478,11 +478,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4be8591e680953d4cac87b421da72ae3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  label: Change Value
+  label: Ghost
   detailsPrefix: 'Ghosting Lasts '
-  detailsSuffix: s Less Time
+  detailsSuffix: s Less
   changeBy: -0.5
   store: {fileID: 11400000, guid: 7a5387ec2f222264290f9747b6b94f3a, type: 2}
+  insertValue: 1
 --- !u!95 &911264403113962323
 Animator:
   serializedVersion: 4

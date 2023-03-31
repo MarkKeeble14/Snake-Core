@@ -80,15 +80,6 @@ MonoBehaviour:
   breakOnEventsTriggered: 1
   onBreakParticles:
   - {fileID: 733617459196643852, guid: 559c6adf20055d1468538430b9ef0fc8, type: 3}
-  onSpawn:
-    clip: {fileID: 0}
-    volume: 1
-    pitch: 1
-    source: {fileID: 3940464426745137947}
-    randomizeVolume: 0
-    minMaxVolume: {x: 0, y: 0}
-    randomizePitch: 0
-    minMaxPitch: {x: 0, y: 0}
   onBreak:
     clip: {fileID: 0}
     volume: 1
@@ -98,6 +89,7 @@ MonoBehaviour:
     minMaxVolume: {x: 0, y: 0}
     randomizePitch: 0
     minMaxPitch: {x: 0, y: 0}
+    useTemporaryAudioSource: 0
   onPickup:
     clip: {fileID: 0}
     volume: 1
@@ -107,6 +99,7 @@ MonoBehaviour:
     minMaxVolume: {x: 0, y: 0}
     randomizePitch: 0
     minMaxPitch: {x: 0, y: 0}
+    useTemporaryAudioSource: 0
 --- !u!82 &3940464426745137947
 AudioSource:
   m_ObjectHideFlags: 0
@@ -116,7 +109,8 @@ AudioSource:
   m_GameObject: {fileID: 349001341514531633}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 4296464483364334876, guid: a5dd706b42f20014b862cf9ece0ec4b2,
+    type: 2}
   m_audioClip: {fileID: 0}
   m_PlayOnAwake: 1
   m_Volume: 1

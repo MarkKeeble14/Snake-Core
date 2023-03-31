@@ -86,6 +86,8 @@ public class GridGenerator : MonoBehaviour
     private List<ArrowPointer> spawnedFoodPointers = new List<ArrowPointer>();
 
     [Header("Event Stack")]
+    [SerializeField] private int increasePopSpeedAfter = 5;
+    [SerializeField] private float decreaseDelayBetweenEventStackTriggersRate = .05f;
     [SerializeField] private IntStore maxStackSize;
     private Queue<Action> eventStack = new Queue<Action>();
     [SerializeField] private EventStackDisplay eventStackDisplay;
@@ -209,7 +211,7 @@ public class GridGenerator : MonoBehaviour
             for (int p = 0; p < numColumns; p++)
             {
                 // Don't spawn cell if not supposed to
-                if (celllNoiseMap[i, p] < worldCellPerlinMinimumValue) continue;
+                // if (celllNoiseMap[i, p] < worldCellPerlinMinimumValue) continue;
 
                 // Spawn cell
                 GridCell spawned = Instantiate(gridCellPrefab, new Vector3(i, 0, p), Quaternion.identity, transform);
@@ -485,10 +487,18 @@ public class GridGenerator : MonoBehaviour
         SnakeBehaviour._Instance.StopMoving();
         Time.timeScale = 0;
 
+        float t = 0;
+        int eventCount = 0;
+
         // For all of the displayed events in the stack
         while (eventStack.Count > 0)
         {
-            yield return new WaitForSecondsRealtime(delayBetweenEventStackTriggers);
+            yield return new WaitForSecondsRealtime(delayBetweenEventStackTriggers - t);
+            if (eventCount > increasePopSpeedAfter)
+            {
+                t += decreaseDelayBetweenEventStackTriggersRate;
+            }
+            eventCount++;
 
             // Pop topmost function
             Action a = eventStack.Dequeue();

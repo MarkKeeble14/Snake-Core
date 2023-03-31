@@ -4,10 +4,11 @@ public class AlterFloatStoreOnSelect : OnSelectCardAction
 {
     [SerializeField] private float changeBy;
     [SerializeField] private FloatStore store;
+    [SerializeField] private bool insertValue = true;
 
     public override void SetCard(SelectionCard card)
     {
-        card.Set(label, detailsPrefix + changeBy + detailsSuffix, delegate
+        card.Set(label, detailsPrefix + (insertValue ? changeBy.ToString() : "") + detailsSuffix, delegate
         {
             store.Value += changeBy;
         });

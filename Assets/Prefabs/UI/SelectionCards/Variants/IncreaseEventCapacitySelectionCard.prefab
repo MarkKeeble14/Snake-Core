@@ -478,11 +478,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a34b3a9a31968d84493a9205806627b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  label: Change Value
+  label: Effect Capacity
   detailsPrefix: 'Hold '
   detailsSuffix: ' Additional Event Before Activating'
   changeBy: 1
   store: {fileID: 11400000, guid: fe39e4c3e14b8da4aaa6600327619443, type: 2}
+  insertValue: 1
 --- !u!95 &2955132853120117181
 Animator:
   serializedVersion: 4

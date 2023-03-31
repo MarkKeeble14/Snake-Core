@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SnakeBehaviour : GridCellOccupant
 {
@@ -233,8 +234,44 @@ public class SnakeBehaviour : GridCellOccupant
         ChangeCell(nextCell);
     }
 
+    public void AddButtonControls()
+    {
+        Button upButton = GameObject.Find("SnakeUpButton").GetComponent<Button>();
+        upButton.onClick.AddListener(
+            delegate
+            {
+                ChangeDirectionUp();
+            }
+        );
+
+        Button rightButton = GameObject.Find("SnakeRightButton").GetComponent<Button>();
+        rightButton.onClick.AddListener(
+            delegate
+            {
+                ChangeDirectionRight();
+            }
+        );
+
+        Button downButton = GameObject.Find("SnakeDownButton").GetComponent<Button>();
+        downButton.onClick.AddListener(
+            delegate
+            {
+                ChangeDirectionDown();
+            }
+        );
+
+        Button leftButton = GameObject.Find("SnakeLeftButton").GetComponent<Button>();
+        leftButton.onClick.AddListener(
+            delegate
+            {
+                ChangeDirectionLeft();
+            }
+        );
+    }
+
     private void ChangeDirection(Vector2Int disallowDirection, Vector2Int setDirection)
     {
+        // Debug.Log("Changing Direction To: " + setDirection);
         if (lastDirectionMoved != disallowDirection)
         {
             direction = setDirection;
@@ -424,32 +461,54 @@ public class SnakeBehaviour : GridCellOccupant
         bombStore.Value--;
     }
 
+    public void ChangeDirectionUp()
+    {
+        ChangeDirection(Vector2Int.down, Vector2Int.up);
+    }
+
+    public void ChangeDirectionLeft()
+    {
+        ChangeDirection(Vector2Int.right, Vector2Int.left);
+    }
+
+    public void ChangeDirectionDown()
+    {
+        ChangeDirection(Vector2Int.up, Vector2Int.down);
+    }
+
+    public void ChangeDirectionRight()
+    {
+        ChangeDirection(Vector2Int.left, Vector2Int.right);
+    }
+
     private void MoveControls()
     {
         // Up
         if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
         {
-            ChangeDirection(Vector2Int.down, Vector2Int.up);
+            ChangeDirectionUp();
         }
         // Left
         if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
         {
-            ChangeDirection(Vector2Int.right, Vector2Int.left);
+            ChangeDirectionLeft();
         }
         // Down
         if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
         {
-            ChangeDirection(Vector2Int.up, Vector2Int.down);
+            ChangeDirectionDown();
         }
         // Right
         if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
         {
-            ChangeDirection(Vector2Int.left, Vector2Int.right);
+            ChangeDirectionRight();
         }
     }
 
     private void MobileControls()
     {
+        if (!UIManager._Instance.UseSwipe) return;
+
         if (Input.touches.Length > 0)
         {
             Touch t = Input.GetTouch(0);

@@ -466,11 +466,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4be8591e680953d4cac87b421da72ae3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  label: Change Value
-  detailsPrefix: 'Events are now Doubled for '
-  detailsSuffix: s Less Time
+  label: x2 Effects
+  detailsPrefix: 'Effects are now Doubled for '
+  detailsSuffix: s Less
   changeBy: -0.5
   store: {fileID: 11400000, guid: d95dbd81d223b62458e3319b54d92da8, type: 2}
+  insertValue: 1
 --- !u!225 &3452145788446874522
 CanvasGroup:
   m_ObjectHideFlags: 0

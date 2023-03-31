@@ -466,11 +466,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4be8591e680953d4cac87b421da72ae3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  label: Change Value
-  detailsPrefix: 'The Strength of Time Speed Down is Increased by '
+  label: Slow Down Time
+  detailsPrefix: Time is Slowed Down More
   detailsSuffix: 
   changeBy: 0.05
   store: {fileID: 11400000, guid: fc56c2944f8768c48aaa18e99de7aefb, type: 2}
+  insertValue: 0
 --- !u!225 &154126609546538657
 CanvasGroup:
   m_ObjectHideFlags: 0
