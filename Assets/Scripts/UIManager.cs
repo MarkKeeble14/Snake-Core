@@ -92,6 +92,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI musicText;
     [SerializeField] private AudioMixer mixer;
 
+    [SerializeField] private AudioClipContainer onButtonClick;
+
     // if player has more segments, high score
     // if player has same segments, less duration, high score
     // if player has same segments, more duration, no high score
@@ -409,5 +411,10 @@ public class UIManager : MonoBehaviour
     public void Restart()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void PlayUIClickSound()
+    {
+        onButtonClick.PlayOneShot();
     }
 }

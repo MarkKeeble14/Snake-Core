@@ -107,6 +107,10 @@ public class GridGenerator : MonoBehaviour
     [SerializeField] private float musicMaxVolume = .3f;
     [SerializeField] private float musicFadeRate = .25f;
 
+    [SerializeField] private AudioSource ambience;
+    [SerializeField] private float ambienceMaxVolume = .3f;
+    [SerializeField] private float ambienceFadeRate = .25f;
+
     public Difficulty Difficulty { get; set; }
 
     private void Awake()
@@ -138,6 +142,10 @@ public class GridGenerator : MonoBehaviour
 
         // Set Time
         Time.timeScale = 1;
+
+        ambience.volume = 0;
+        ambience.Play();
+        StartCoroutine(FadeInSource(ambience, ambienceMaxVolume, ambienceFadeRate));
     }
 
     private void Update()
@@ -159,8 +167,14 @@ public class GridGenerator : MonoBehaviour
     {
         StartCoroutine(UIManager._Instance.StartSnake(delay));
         gameStarted = true;
+
         onBeginGame.PlayOneShot();
-        StartCoroutine(FadeInMusic());
+
+        music.volume = 0;
+        music.Play();
+
+        StartCoroutine(FadeInSource(music, musicMaxVolume, musicFadeRate));
+        StartCoroutine(FadeOutSource(ambience, 0, ambienceFadeRate));
     }
 
     private void Generate()
@@ -523,17 +537,24 @@ public class GridGenerator : MonoBehaviour
         Time.timeScale = targetTimeScale;
     }
 
-    private IEnumerator FadeInMusic()
+    private IEnumerator FadeInSource(AudioSource source, float maxVolume, float fadeRate)
     {
-        music.volume = 0;
-        music.Play();
-
-        while (music.volume < musicMaxVolume)
+        while (source.volume < maxVolume)
         {
-            music.volume += Time.unscaledDeltaTime * musicFadeRate;
+            source.volume += Time.unscaledDeltaTime * fadeRate;
             yield return null;
         }
-        music.volume = musicMaxVolume;
+        source.volume = maxVolume;
+    }
+
+    private IEnumerator FadeOutSource(AudioSource source, float minVolume, float fadeRate)
+    {
+        while (source.volume < minVolume)
+        {
+            source.volume -= Time.unscaledDeltaTime * fadeRate;
+            yield return null;
+        }
+        source.volume = minVolume;
     }
 
     public void PlayFromTemporaryAudioSource(AudioClipContainer clip)

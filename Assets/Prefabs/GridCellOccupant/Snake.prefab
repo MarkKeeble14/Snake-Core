@@ -185,17 +185,17 @@ MonoBehaviour:
     useTemporaryAudioSource: 0
   onGrow:
     clip: {fileID: 8300000, guid: b8e569b3ee684d94cb5b7ad1148dc2a5, type: 3}
-    volume: 0.6
+    volume: 0.3
     pitch: 1
     source: {fileID: 1446622283420678058}
     randomizeVolume: 1
-    minMaxVolume: {x: 0.6, y: 0.8}
+    minMaxVolume: {x: 0.2, y: 0.35}
     randomizePitch: 1
-    minMaxPitch: {x: 0.6, y: 1}
+    minMaxPitch: {x: 0.6, y: 0.9}
     useTemporaryAudioSource: 0
   onTeleport:
     clip: {fileID: 8300000, guid: 6427d0ea2eaf79f4f9cc843253e8f33b, type: 3}
-    volume: 1
+    volume: 0.5
     pitch: 1.2
     source: {fileID: 1446622283420678058}
     randomizeVolume: 0

@@ -551,4 +551,9 @@ public class SnakeBehaviour : GridCellOccupant
             }
         }
     }
+
+    public void ResetMoveTimer()
+    {
+        moveTimer = timeBetweenMoves.Value;
+    }
 }
