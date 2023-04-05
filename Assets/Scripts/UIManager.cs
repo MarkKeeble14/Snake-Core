@@ -34,7 +34,7 @@ public class UIManager : MonoBehaviour
     [Header("Control Scheme")]
     private ControlScheme controlScheme = ControlScheme.SWIPE;
     public bool UseSwipe => controlScheme == ControlScheme.SWIPE;
-    public bool UseButtons => controlScheme == ControlScheme.BUTTONS;
+    public bool UseButtons => !HideIfKeyboardBased._IsKeyboardBased && controlScheme == ControlScheme.BUTTONS;
     [SerializeField] private SerializableDictionary<ControlScheme, Sprite> controlSchemeSpriteDict = new SerializableDictionary<ControlScheme, Sprite>();
     [SerializeField] private Image controlSchemeIcon;
     [SerializeField] private GameObject changeDirectionsButtonsContainer;

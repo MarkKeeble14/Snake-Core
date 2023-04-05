@@ -18,7 +18,9 @@ public class StartSnakeButton : MonoBehaviour
         snakeSpeedStore.Value = snakeSpeed;
 
         if (UIManager._Instance.UseButtons)
+        {
             SnakeBehaviour._Instance.AddButtonControls();
+        }
 
         GridGenerator._Instance.StartGame(snakeStartDelay);
 
